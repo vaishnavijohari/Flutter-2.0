@@ -4,20 +4,28 @@ import 'package:provider/provider.dart';
 // Import your screens
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/main_screen.dart'; // The main container with bottom nav
+import 'screens/main_screen.dart'; 
 
-// Import the new provider
-import 'providers/theme_provider.dart'; // Make sure you created this file
+// Import your providers and services
+import 'providers/theme_provider.dart';
+// --- NEW: Import the repository we created earlier ---
+// (Make sure you have created this file from my previous instructions)
+import 'services/story_repository.dart'; 
+
 
 void main() {
-  // It's good practice to ensure widgets are initialized before running the app
   WidgetsFlutterBinding.ensureInitialized();
   
   runApp(
-    // Wrap the entire app in the ChangeNotifierProvider
-    // This makes the ThemeProvider available to all widgets
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
+    // --- UPDATED: Use MultiProvider to provide multiple services ---
+    MultiProvider(
+      providers: [
+        // Provider for Theme State
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        
+        // Provider for your App's Data (using the repository)
+        Provider(create: (_) => StoryRepository()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -28,17 +36,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use Provider.of to listen for changes in the ThemeProvider
+    // This line remains the same and will continue to work
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
       title: 'Freemium Novels',
       debugShowCheckedModeBanner: false,
 
-      // --- THEME UPGRADE ---
-      themeMode: themeProvider.themeMode, // The theme is now controlled by the provider
-
-      // Light Theme Definition
+      // Theme logic is unchanged
+      themeMode: themeProvider.themeMode, 
       theme: ThemeData(
         brightness: Brightness.light,
         primarySwatch: Colors.teal,
@@ -54,8 +60,6 @@ class MyApp extends StatelessWidget {
           secondary: Colors.amber,
         ),
       ),
-
-      // Dark Theme Definition
       darkTheme: ThemeData(
         brightness: Brightness.dark,
         primarySwatch: Colors.teal,
@@ -71,9 +75,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       
-      // --- ROUTES UPGRADE ---
-      // The SplashScreen is now the single entry point.
-      // It will handle the logic of navigating to either Login or Main screen.
+      // Routes are unchanged
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),

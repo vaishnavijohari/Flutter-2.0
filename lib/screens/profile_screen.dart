@@ -3,25 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// --- UPDATED: Import the new reading list screen ---
+// --- CORRECTED IMPORTS ---
+import '../providers/theme_provider.dart';
+import 'login_screen.dart';
 import 'reading_list_screen.dart';
-
-// You will need to create and import these files
-// import '../providers/theme_provider.dart';
-// import 'login_screen.dart';
-
-// --- PLACEHOLDER FOR THEME PROVIDER (Move to its own file) ---
-// This is included so the file is self-contained.
-// You should create a separate providers/theme_provider.dart file as described above.
-class ThemeProvider with ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.dark;
-  ThemeMode get themeMode => _themeMode;
-  void toggleTheme(bool isDarkMode) {
-    _themeMode = isDarkMode ? ThemeMode.dark : ThemeMode.light;
-    notifyListeners();
-  }
-}
-// --- END OF PLACEHOLDER ---
 
 
 class ProfileScreen extends StatefulWidget {
@@ -47,7 +32,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String? storedUsername = prefs.getString('username');
 
     if (storedUsername == null || storedUsername.isEmpty) {
-      // Generate a random username for first-time or social login users
       storedUsername = 'Reader${Random().nextInt(9000) + 1000}';
       await prefs.setString('username', storedUsername);
     }
@@ -132,13 +116,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
-    // Optionally clear other user data
-    // await prefs.remove('username');
 
     if (mounted) {
       // Navigate to login screen and clear all previous routes
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const Scaffold(body: Center(child: Text("Login Screen Placeholder")))), // Replace with your actual LoginScreen
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
         (Route<dynamic> route) => false,
       );
     }
@@ -155,9 +137,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
-              // Implement actual account deletion logic here
               Navigator.pop(context);
-              _logout(); // Log out after deletion
+              _logout(); 
             },
             child: const Text('Delete'),
           ),
@@ -168,6 +149,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // This call will now find the provider from main.dart
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.themeMode == ThemeMode.dark;
 
@@ -177,14 +159,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           : ListView(
               padding: const EdgeInsets.all(16.0),
               children: [
-                // --- Header ---
                 _buildHeader(context),
                 const SizedBox(height: 24),
-
-                // --- Settings Section ---
                 _buildSectionTitle('Settings'),
                 _buildThemeToggle(isDarkMode, themeProvider),
-                // --- THIS IS THE UPDATED PART ---
                 _buildListTile(
                   icon: Icons.bookmark_border,
                   title: 'My Reading List',
@@ -196,8 +174,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   },
                 ),
                 const Divider(),
-
-                // --- Information Section ---
                 _buildSectionTitle('Information'),
                 _buildListTile(icon: Icons.notifications_none, title: 'Notices', onTap: () {}),
                 _buildListTile(icon: Icons.shield_outlined, title: 'Privacy Policy', onTap: () {}),
@@ -205,11 +181,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const ListTile(
                   leading: Icon(Icons.info_outline),
                   title: Text('Version'),
-                  trailing: Text('1.0.0'), // Get this from pubspec.yaml later
+                  trailing: Text('1.0.0'),
                 ),
                 const Divider(),
-
-                // --- Account Actions ---
                 _buildListTile(
                   icon: Icons.logout,
                   title: 'Log Out',

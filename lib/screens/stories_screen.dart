@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -19,20 +18,19 @@ class _StoriesScreenState extends State<StoriesScreen> {
   String? _errorMessage;
   String _selectedCategory = "Originals";
 
-  // --- NEW: State for Search Functionality ---
+  // --- Search Functionality State ---
   final TextEditingController _searchController = TextEditingController();
-  List<Story> _allStoriesForCategory = []; // Holds all stories for the selected category
-  List<Story> _filteredStories = [];      // Holds the stories to be displayed (after filtering)
+  List<Story> _allStoriesForCategory = []; 
+  List<Story> _filteredStories = [];      
 
-  // Pagination state
+  // --- MODIFIED: Pagination state updated for a 2x5 grid ---
   int _currentPage = 1;
-  final int _storiesPerPage = 12;
+  final int _storiesPerPage = 10; // 2 columns * 5 rows = 10 stories per page
   
   @override
   void initState() {
     super.initState();
     _fetchStories(_selectedCategory);
-    // Add a listener to the search controller to filter as the user types
     _searchController.addListener(_filterStories);
   }
 
@@ -65,7 +63,7 @@ class _StoriesScreenState extends State<StoriesScreen> {
 
       setState(() {
         _allStoriesForCategory = fetchedStories;
-        _filterStories(); // Apply initial filter (which will show all stories)
+        _filterStories(); 
         _isLoading = false;
       });
 
@@ -76,8 +74,7 @@ class _StoriesScreenState extends State<StoriesScreen> {
       });
     }
   }
-
-  // --- NEW: Filtering Logic ---
+  
   void _filterStories() {
     final query = _searchController.text.toLowerCase();
     setState(() {
@@ -88,11 +85,10 @@ class _StoriesScreenState extends State<StoriesScreen> {
             .where((story) => story.title.toLowerCase().contains(query))
             .toList();
       }
-      _currentPage = 1; // Reset to first page after a search
+      _currentPage = 1; 
     });
   }
   
-  // --- UPDATED: Pagination now works on the filtered list ---
   int get _totalPages => (_filteredStories.length / _storiesPerPage).ceil();
 
   List<Story> get _paginatedStories {
@@ -116,7 +112,6 @@ class _StoriesScreenState extends State<StoriesScreen> {
               const Text("Fabula", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.cyanAccent, fontFamily: 'Cinzel')),
               const SizedBox(height: 16),
               
-              // --- NEW: Search Bar UI ---
               _buildSearchBar(),
               const SizedBox(height: 16),
 
@@ -130,37 +125,10 @@ class _StoriesScreenState extends State<StoriesScreen> {
     );
   }
 
-  Widget _buildSearchBar() {
-    return TextField(
-      controller: _searchController,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        hintText: 'Search for stories...',
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        prefixIcon: const Icon(Icons.search, color: Colors.grey),
-        filled: true,
-        fillColor: Colors.grey[850],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        suffixIcon: _searchController.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear, color: Colors.grey),
-                onPressed: () {
-                  _searchController.clear();
-                },
-              )
-            : null,
-      ),
-    );
-  }
-
   Widget _buildBody() {
     if (_isLoading) return _buildGridShimmer();
     if (_errorMessage != null) return _buildErrorState();
     
-    // --- NEW: Handle "No Results" case ---
     if (_filteredStories.isEmpty && _searchController.text.isNotEmpty) {
       return _buildNoResults();
     }
@@ -173,8 +141,12 @@ class _StoriesScreenState extends State<StoriesScreen> {
           child: GridView.builder(
             padding: const EdgeInsets.symmetric(vertical: 10),
             itemCount: _paginatedStories.length,
+            // --- MODIFIED: Grid layout changed to 2 columns with a new aspect ratio ---
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3, mainAxisSpacing: 15, crossAxisSpacing: 15, childAspectRatio: 0.6,
+              crossAxisCount: 2,         // 2 columns
+              mainAxisSpacing: 18,       // Spacing between rows
+              crossAxisSpacing: 18,      // Spacing between columns
+              childAspectRatio: 0.7,     // Adjusts height relative to width (width / height)
             ),
             itemBuilder: (context, index) {
               return StoryCard(story: _paginatedStories[index]);
@@ -190,80 +162,16 @@ class _StoriesScreenState extends State<StoriesScreen> {
     );
   }
 
-  // --- NEW: Widget for "No Results" ---
-  Widget _buildNoResults() {
-    // Get 5 random stories as suggestions
-    final suggestions = List.from(_allStoriesForCategory)..shuffle();
-    final randomStories = suggestions.take(5).toList();
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.search_off, size: 60, color: Colors.grey),
-          const SizedBox(height: 16),
-          Text(
-            'No results found for "${_searchController.text}"',
-            style: const TextStyle(color: Colors.white70, fontSize: 18),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Maybe you\'d like one of these?',
-            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 180,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: randomStories.length,
-              itemBuilder: (context, index) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: SizedBox(width: 110, child: StoryCard(story: randomStories[index])),
-              ),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategorySelector() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildCategoryButton("Originals"),
-        const SizedBox(width: 20),
-        _buildCategoryButton("Fan-Fiction"),
-      ],
-    );
-  }
-
-  Widget _buildCategoryButton(String label) {
-    final isSelected = label == _selectedCategory;
-    return ElevatedButton(
-      onPressed: _isLoading ? null : () {
-        if (_selectedCategory != label) {
-          _selectedCategory = label;
-          _searchController.clear(); // Clear search when changing category
-          _fetchStories(label);
-        }
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? Colors.cyan : Colors.grey[800],
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      ),
-      child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-    );
-  }
-  
-  Widget _buildGridShimmer() { /* ... unchanged ... */ return Shimmer.fromColors(baseColor: Colors.grey[900]!,highlightColor: Colors.grey[800]!,child: GridView.builder(itemCount: _storiesPerPage,gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3,mainAxisSpacing: 15,crossAxisSpacing: 15,childAspectRatio: 0.6,),itemBuilder: (context, index) => Column(children: [Expanded(child: Container(decoration: BoxDecoration(color: Colors.black,borderRadius: BorderRadius.circular(12),),),),const SizedBox(height: 8),Container(height: 14, width: 80, color: Colors.black),],),),);}
+  // --- Other build methods like _buildSearchBar, _buildNoResults, etc. are unchanged ---
+  Widget _buildSearchBar() { /* ... unchanged ... */ return TextField(controller: _searchController,style: const TextStyle(color: Colors.white),decoration: InputDecoration(hintText: 'Search for stories...',hintStyle: TextStyle(color: Colors.grey[400]),prefixIcon: const Icon(Icons.search, color: Colors.grey),filled: true,fillColor: Colors.grey[850],border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),borderSide: BorderSide.none,),suffixIcon: _searchController.text.isNotEmpty? IconButton(icon: const Icon(Icons.clear, color: Colors.grey),onPressed: () {_searchController.clear();},): null,),);}
+  Widget _buildNoResults() { /* ... unchanged ... */ final suggestions = List.from(_allStoriesForCategory)..shuffle(); final randomStories = suggestions.take(5).toList(); return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center,children: [const Icon(Icons.search_off, size: 60, color: Colors.grey),const SizedBox(height: 16),Text('No results found for "${_searchController.text}"',style: const TextStyle(color: Colors.white70, fontSize: 18),),const SizedBox(height: 24),const Text('Maybe you\'d like one of these?',style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),),const SizedBox(height: 16),SizedBox(height: 180,child: ListView.builder(scrollDirection: Axis.horizontal,itemCount: randomStories.length,itemBuilder: (context, index) => Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0),child: SizedBox(width: 110, child: StoryCard(story: randomStories[index])),),),)],),);}
+  Widget _buildCategorySelector() { /* ... unchanged ... */ return Row(mainAxisAlignment: MainAxisAlignment.center,children: [_buildCategoryButton("Originals"),const SizedBox(width: 20),_buildCategoryButton("Fan-Fiction"),],);}
+  Widget _buildCategoryButton(String label) { /* ... unchanged ... */ final isSelected = label == _selectedCategory; return ElevatedButton(onPressed: _isLoading ? null : () {if (_selectedCategory != label) {_selectedCategory = label;_searchController.clear();_fetchStories(label);}},style: ElevatedButton.styleFrom(backgroundColor: isSelected ? Colors.cyan : Colors.grey[800],padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),),child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),);}
+  Widget _buildGridShimmer() { return Shimmer.fromColors(baseColor: Colors.grey[900]!,highlightColor: Colors.grey[800]!,child: GridView.builder(itemCount: _storiesPerPage, gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 18, crossAxisSpacing: 18, childAspectRatio: 0.7,), itemBuilder: (context, index) => Column(children: [Expanded(child: Container(decoration: BoxDecoration(color: Colors.black,borderRadius: BorderRadius.circular(12),),),),const SizedBox(height: 8),Container(height: 14, width: 80, color: Colors.black),],),),);}
   Widget _buildErrorState() { /* ... unchanged ... */ return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center,children: [const Icon(Icons.error_outline, color: Colors.red, size: 60),const SizedBox(height: 20),Text(_errorMessage!,textAlign: TextAlign.center,style: const TextStyle(color: Colors.white70, fontSize: 16),),const SizedBox(height: 20),ElevatedButton(onPressed: () => _fetchStories(_selectedCategory),child: const Text('Try Again'),)],),);}
   Widget _buildEmptyState() { /* ... unchanged ... */ return const Center(child: Text('No stories found in this category.',style: TextStyle(color: Colors.white70, fontSize: 16),),);}
 }
 
-
-// --- ABSTRACTED WIDGETS ---
 
 class StoryCard extends StatelessWidget {
   final Story story;
@@ -302,13 +210,16 @@ class StoryCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            story.title,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          // --- MODIFIED: The Text widget is now wrapped in a SizedBox for uniform height ---
+          SizedBox(
+            height: 40, // Provides a consistent height for the text area
+            child: Text(
+              story.title,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+              textAlign: TextAlign.center,
+              maxLines: 2, // Allows text to wrap to a second line
+              overflow: TextOverflow.ellipsis, // Adds "..." if text is still too long
+            ),
           ),
         ],
       ),
@@ -323,31 +234,6 @@ class PaginationControls extends StatelessWidget {
   const PaginationControls({super.key, required this.currentPage, required this.totalPages, required this.onPageChanged});
   
   @override
-  Widget build(BuildContext context) {
-    if (totalPages <= 1) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildNavButton(Icons.first_page, currentPage > 1 ? () => onPageChanged(1) : null),
-          _buildNavButton(Icons.chevron_left, currentPage > 1 ? () => onPageChanged(currentPage - 1) : null),
-          const SizedBox(width: 10),
-          Text('Page $currentPage of $totalPages', style: const TextStyle(color: Colors.white)),
-          const SizedBox(width: 10),
-          _buildNavButton(Icons.chevron_right, currentPage < totalPages ? () => onPageChanged(currentPage + 1) : null),
-          _buildNavButton(Icons.last_page, currentPage < totalPages ? () => onPageChanged(totalPages) : null),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildNavButton(IconData icon, VoidCallback? onPressed) {
-    return IconButton(
-      onPressed: onPressed,
-      icon: Icon(icon),
-      color: onPressed != null ? Colors.white : Colors.grey[700],
-      splashRadius: 20,
-    );
-  }
+  Widget build(BuildContext context) { /* ... unchanged ... */ if (totalPages <= 1) return const SizedBox.shrink(); return Padding(padding: const EdgeInsets.symmetric(vertical: 12),child: Row(mainAxisAlignment: MainAxisAlignment.center,children: [_buildNavButton(Icons.first_page, currentPage > 1 ? () => onPageChanged(1) : null),_buildNavButton(Icons.chevron_left, currentPage > 1 ? () => onPageChanged(currentPage - 1) : null),const SizedBox(width: 10),Text('Page $currentPage of $totalPages', style: const TextStyle(color: Colors.white)),const SizedBox(width: 10),_buildNavButton(Icons.chevron_right, currentPage < totalPages ? () => onPageChanged(currentPage + 1) : null),_buildNavButton(Icons.last_page, currentPage < totalPages ? () => onPageChanged(totalPages) : null),],),);}
+  Widget _buildNavButton(IconData icon, VoidCallback? onPressed) { /* ... unchanged ... */ return IconButton(onPressed: onPressed,icon: Icon(icon),color: onPressed != null ? Colors.white : Colors.grey[700],splashRadius: 20,);}
 }

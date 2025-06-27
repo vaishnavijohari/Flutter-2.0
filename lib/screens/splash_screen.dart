@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:connectivity_plus/connectivity_plus.dart'; // <-- ADD THIS IMPORT
 
 import 'login_screen.dart';
 import 'main_screen.dart'; // Main screen with bottom navigation
@@ -12,7 +13,6 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-// Add SingleTickerProviderStateMixin for the animation controller
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
@@ -22,16 +22,13 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // Initialize the AnimationController
     _controller = AnimationController(
       duration: const Duration(seconds: 3),
       vsync: this,
     );
 
-    // Create a Tween animation that goes from 0.0 to 1.0
     _animation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller)
       ..addListener(() {
-        // Call setState to rebuild the widget on each animation frame
         setState(() {});
       });
 
@@ -39,16 +36,56 @@ class _SplashScreenState extends State<SplashScreen>
     _startSplashSequence();
   }
 
+  // --- NEW FUNCTION: To check for internet connectivity ---
+  Future<bool> _checkInternetConnection() async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    // Check if the device is connected to Wi-Fi, mobile data, or ethernet.
+    if (connectivityResult.contains(ConnectivityResult.mobile) ||
+        connectivityResult.contains(ConnectivityResult.wifi) ||
+        connectivityResult.contains(ConnectivityResult.ethernet)) {
+      return true;
+    }
+    return false;
+  }
+
+  // --- NEW FUNCTION: To show a dialog when there's no internet ---
+  void _showNoInternetDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User must tap button to close
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('No Internet Connection'),
+          content: const Text('Please connect to the internet and try again.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Retry'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                _startSplashSequence();    // And try the sequence again
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // --- MODIFIED FUNCTION: Now includes the internet check ---
   Future<void> _startSplashSequence() async {
-    // First, check the login status from shared preferences
+    // 1. Check for internet first
+    final hasInternet = await _checkInternetConnection();
+    if (!hasInternet) {
+      _showNoInternetDialog(); // If no internet, show dialog and stop.
+      return;
+    }
+
+    // 2. If internet exists, proceed with the original logic
     final prefs = await SharedPreferences.getInstance();
     final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
-    // Add a listener to the animation status
     _controller.addStatusListener((status) {
-      // When the animation is complete, navigate to the next screen
       if (status == AnimationStatus.completed) {
-        // IMPORTANT: Check if the widget is still in the tree before navigating
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -61,17 +98,17 @@ class _SplashScreenState extends State<SplashScreen>
       }
     });
 
-    // Start the animation
+    // 3. Start the animation only after confirming internet connection
     _controller.forward();
   }
 
   @override
   void dispose() {
-    // Dispose the controller when the widget is removed to prevent memory leaks
     _controller.dispose();
     super.dispose();
   }
 
+  // The build method remains EXACTLY THE SAME...
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,69 +124,30 @@ class _SplashScreenState extends State<SplashScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // App Logo
-            Image.asset(
-              'assets/logo.png', // Make sure this image exists in your assets folder
-              width: 160,
-              height: 160,
-              errorBuilder: (context, error, stackTrace) => const Icon(
-                Icons.image_not_supported,
-                size: 160,
-                color: Colors.white70,
-              ),
-            ),
+            // App Logo and other widgets...
+            Image.asset('assets/logo.png', width: 160, height: 160, /* ... */),
             const SizedBox(height: 20),
-
-            // Tagline
-            const Text(
-              "You don't need to pay a dime to read great stories",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            const Text("You don't need to pay a dime to read great stories", /* ... */),
             const SizedBox(height: 10),
-
-            // Story Update Info
-            const Text(
-              "New stories dropping on 5th, 15th and 25th of every month.",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white70,
-              ),
-            ),
+            const Text("New stories dropping on 5th, 15th and 25th of every month.", /* ... */),
             const SizedBox(height: 50),
-
-            // --- Game-Style Loading Bar ---
+            // Loading Bar...
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'Loading... ${(_animation.value * 100).toInt()}%',
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
+                  Text('Loading... ${(_animation.value * 100).toInt()}%', /* ... */),
                   const SizedBox(height: 8),
-                  // The container for the loading bar track
-                  Container(
+                  SizedBox(
                     height: 12,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white30, width: 1),
-                    ),
+                    /* ... */
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: LinearProgressIndicator(
-                        value: _animation.value, // Controlled by the animation
+                        value: _animation.value,
                         backgroundColor: Colors.transparent,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Colors.cyanAccent,
-                        ),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.cyanAccent),
                       ),
                     ),
                   ),

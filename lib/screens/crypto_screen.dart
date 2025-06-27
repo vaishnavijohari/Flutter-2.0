@@ -1,23 +1,22 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
-// --- UPDATED: Import the new article list screen ---
+import '../services/crypto_api_service.dart'; // Import the API service
 import 'article_list_screen.dart';
 
-// --- MODEL CLASSES ---
-
+// Model for CryptoCurrency
 class CryptoCurrency {
+  final String id; // e.g., 'bitcoin', 'ethereum'
   final String name;
   final String symbol;
   final double price;
   final double change24h;
-  // Data for each time range
-  final Map<TimeRange, List<FlSpot>> priceData;
+  Map<TimeRange, List<FlSpot>> priceData; // Made this non-final to update it
 
   CryptoCurrency({
+    required this.id,
     required this.name,
     required this.symbol,
     required this.price,
@@ -26,17 +25,15 @@ class CryptoCurrency {
   });
 }
 
+// Model for ArticleCategory
 class ArticleCategory {
   final String name;
   final String imageUrl;
   ArticleCategory({required this.name, required this.imageUrl});
 }
 
-// Enum for the time range selector
+// Enum for TimeRange
 enum TimeRange { oneDay, oneWeek, oneMonth, sixMonths }
-
-
-// --- MAIN CRYPTO SCREEN WIDGET ---
 
 class CryptoScreen extends StatefulWidget {
   const CryptoScreen({super.key});
@@ -46,11 +43,16 @@ class CryptoScreen extends StatefulWidget {
 }
 
 class _CryptoScreenState extends State<CryptoScreen> {
+  Map<String, CryptoCurrency> _cryptoData = {};
   late CryptoCurrency _selectedCrypto;
   TimeRange _selectedTimeRange = TimeRange.sixMonths;
-  bool _isLoading = true;
 
-  final Map<String, CryptoCurrency> _cryptoData = {};
+  bool _isPageLoading = true;
+  bool _isChartLoading = true;
+  String? _errorMessage;
+  
+  final CryptoApiService _apiService = CryptoApiService();
+  
   final List<ArticleCategory> _articleCategories = [
     ArticleCategory(name: 'Finance', imageUrl: 'assets/images/finance.jpg'),
     ArticleCategory(name: 'Crypto', imageUrl: 'assets/images/crypto.jpg'),
@@ -61,90 +63,112 @@ class _CryptoScreenState extends State<CryptoScreen> {
   @override
   void initState() {
     super.initState();
-    _generateDummyData();
-    _selectedCrypto = _cryptoData['BTC']!;
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) setState(() => _isLoading = false);
-    });
+    _fetchLivePrices();
   }
 
-  void _generateDummyData() {
-    final List<String> symbols = ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'SHIB'];
-    final List<String> names = ['Bitcoin', 'Ethereum', 'Solana', 'Ripple', 'Dogecoin', 'Shiba Inu'];
-    final List<double> prices = [68450.50, 3560.80, 165.25, 0.521, 0.158, 0.000025];
-    final Random random = Random();
-
-    for (int i = 0; i < symbols.length; i++) {
-      final change = (random.nextDouble() * 10) - 4;
-      _cryptoData[symbols[i]] = CryptoCurrency(
-        name: names[i],
-        symbol: symbols[i],
-        price: prices[i],
-        change24h: change,
-        priceData: {
-          TimeRange.oneDay: _generatePriceHistory(prices[i], 24, 360),
-          TimeRange.oneWeek: _generatePriceHistory(prices[i], 7 * 24, 90),
-          TimeRange.oneMonth: _generatePriceHistory(prices[i], 30 * 24, 30),
-          TimeRange.sixMonths: _generatePriceHistory(prices[i], 180 * 24, 1),
-        },
-      );
+  Future<void> _fetchLivePrices() async {
+    try {
+      final prices = await _apiService.getLiveCryptoPrices();
+      if (mounted) {
+        setState(() {
+          _cryptoData = {for (var crypto in prices) crypto.symbol: crypto};
+          _selectedCrypto = _cryptoData['BTC']!;
+          _isPageLoading = false;
+        });
+        _fetchChartDataForSelectedCrypto();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isPageLoading = false;
+        });
+      }
     }
   }
-
-  List<FlSpot> _generatePriceHistory(double basePrice, int hours, int frequency) {
-    final Random random = Random();
-    return List.generate(hours, (index) {
-      if (index % frequency != 0) return null;
-      final value = basePrice * (1 + (sin(index * pi / (hours / 2)) * 0.1) + (random.nextDouble() * 0.05 - 0.025));
-      return FlSpot(index.toDouble(), value);
-    }).where((spot) => spot != null).cast<FlSpot>().toList();
+  
+  Future<void> _fetchChartDataForSelectedCrypto() async {
+    if (mounted) setState(() => _isChartLoading = true);
+    try {
+      final chartData = await _apiService.getHistoricalChartData(_selectedCrypto.id, _selectedTimeRange);
+      if (mounted) {
+        setState(() {
+          _selectedCrypto.priceData[_selectedTimeRange] = chartData;
+          _isChartLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isChartLoading = false;
+        });
+      }
+    }
   }
 
   void _onCryptoChanged(String? symbol) {
     if (symbol != null && _cryptoData.containsKey(symbol)) {
-      setState(() => _selectedCrypto = _cryptoData[symbol]!);
+      setState(() {
+        _selectedCrypto = _cryptoData[symbol]!;
+      });
+      _fetchChartDataForSelectedCrypto();
     }
   }
 
   void _onTimeRangeChanged(int index) {
-    setState(() => _selectedTimeRange = TimeRange.values[index]);
+    setState(() {
+      _selectedTimeRange = TimeRange.values[index];
+    });
+    _fetchChartDataForSelectedCrypto();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 24),
-              _buildCryptoSelector(),
-              const SizedBox(height: 16),
-              if (!_isLoading) _buildPriceInfo(),
-              const SizedBox(height: 24),
-              if (!_isLoading) ...[
-                _buildTimeRangeSelector(),
-                const SizedBox(height: 8),
-                PriceChart(
-                  key: ValueKey('${_selectedCrypto.symbol}_$_selectedTimeRange'), // Ensures chart rebuilds
-                  priceData: _selectedCrypto.priceData[_selectedTimeRange]!,
-                ),
-              ],
-              const SizedBox(height: 32),
-              _buildArticleSection(),
-            ],
-          ),
+      body: _isPageLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+              ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)))
+              : _buildContent(),
+    );
+  }
+
+  Widget _buildContent() {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(),
+            const SizedBox(height: 24),
+            _buildCryptoSelector(),
+            const SizedBox(height: 16),
+            _buildPriceInfo(),
+            const SizedBox(height: 24),
+            _buildTimeRangeSelector(),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 250,
+              child: _isChartLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : PriceChart(
+                      key: ValueKey('${_selectedCrypto.symbol}_$_selectedTimeRange'),
+                      crypto: _selectedCrypto,
+                      timeRange: _selectedTimeRange,
+                    ),
+            ),
+            const SizedBox(height: 32),
+            _buildArticleSection(),
+          ],
         ),
       ),
     );
   }
-
-  // --- UI BUILDER WIDGETS ---
-
+  
+  // --- ALL THE MISSING BUILDER METHODS ARE NOW RESTORED ---
+  
   Widget _buildHeader() {
     return const Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -153,11 +177,7 @@ class _CryptoScreenState extends State<CryptoScreen> {
         SizedBox(width: 12),
         Text(
           'Finance',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -197,7 +217,6 @@ class _CryptoScreenState extends State<CryptoScreen> {
       symbol: '\$',
       decimalDigits: _selectedCrypto.price > 1 ? 2 : 6,
     );
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -247,58 +266,116 @@ class _CryptoScreenState extends State<CryptoScreen> {
       children: [
         const Text(
           'Browse Articles',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          height: 220,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _articleCategories.length,
-            itemBuilder: (context, index) {
-              return ArticleCategoryCard(category: _articleCategories[index]);
-            },
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _articleCategories.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.0,
           ),
+          itemBuilder: (context, index) {
+            return ArticleCategoryCard(category: _articleCategories[index]);
+          },
         ),
       ],
     );
   }
 }
 
-
-// --- ABSTRACTED WIDGETS ---
+// --- ALL THE MISSING WIDGET CLASSES ARE NOW RESTORED ---
 
 class PriceChart extends StatelessWidget {
-  final List<FlSpot> priceData;
-  const PriceChart({super.key, required this.priceData});
+  final CryptoCurrency crypto;
+  final TimeRange timeRange;
+
+  const PriceChart({
+    super.key,
+    required this.crypto,
+    required this.timeRange,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final priceData = crypto.priceData[timeRange] ?? [];
+    if (priceData.isEmpty) {
+      return const Center(child: Text("Chart data not available.", style: TextStyle(color: Colors.white70)));
+    }
+
+    final tooltipPriceFormat = NumberFormat.currency(
+      locale: 'en_US',
+      symbol: '\$',
+      decimalDigits: crypto.price > 1 ? 2 : 6,
+    );
+
     return SizedBox(
       height: 250,
       child: LineChart(
         LineChartData(
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (spot) => Colors.blueGrey.withAlpha(204),
+              getTooltipColor: (spot) => Colors.blueGrey.withOpacity(0.8),
               getTooltipItems: (touchedSpots) {
                 return touchedSpots.map((spot) {
-                  final format = NumberFormat.currency(locale: 'en_US', symbol: '\$', decimalDigits: 2);
                   return LineTooltipItem(
-                    '${format.format(spot.y)}\n',
+                    '${tooltipPriceFormat.format(spot.y)}\n',
                     const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   );
                 }).toList();
               },
             ),
           ),
-          gridData: const FlGridData(show: false),
-          titlesData: const FlTitlesData(show: false),
-          borderData: FlBorderData(show: false),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: true,
+            getDrawingHorizontalLine: (value) => const FlLine(color: Colors.white10, strokeWidth: 1),
+            getDrawingVerticalLine: (value) => const FlLine(color: Colors.white10, strokeWidth: 1),
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 50,
+                getTitlesWidget: (value, meta) {
+                  final format = NumberFormat.compactSimpleCurrency(locale: 'en_US');
+                  return Text(
+                    format.format(value),
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    textAlign: TextAlign.left,
+                  );
+                },
+              ),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                interval: _getBottomTitleInterval(priceData),
+                getTitlesWidget: (value, meta) {
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    space: 8.0,
+                    child: Text(
+                      _getBottomTitleForValue(value.toInt(), priceData),
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                  );
+                },
+              ),
+            ),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          borderData: FlBorderData(
+            show: true,
+            border: Border.all(color: Colors.white10, width: 1),
+          ),
           lineBarsData: [
             LineChartBarData(
               spots: priceData,
@@ -321,6 +398,27 @@ class PriceChart extends StatelessWidget {
       ),
     );
   }
+
+  double _getBottomTitleInterval(List<FlSpot> spots) {
+    if (spots.isEmpty) return 1;
+    return spots.length / 4; // Aim for about 4 labels on the X-axis
+  }
+
+  String _getBottomTitleForValue(int index, List<FlSpot> spots) {
+    if (index < 0 || index >= spots.length) return '';
+    final timestamp = spots[index].x.toInt();
+    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    
+    switch (timeRange) {
+      case TimeRange.oneDay:
+        return DateFormat('ha').format(date);
+      case TimeRange.oneWeek:
+      case TimeRange.oneMonth:
+        return DateFormat('d MMM').format(date);
+      case TimeRange.sixMonths:
+        return DateFormat('MMM').format(date);
+    }
+  }
 }
 
 class ArticleCategoryCard extends StatelessWidget {
@@ -329,56 +427,51 @@ class ArticleCategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 150,
-      margin: const EdgeInsets.only(right: 16),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        // --- THIS IS THE UPDATED PART ---
-        child: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ArticleListScreen(categoryName: category.name),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ArticleListScreen(categoryName: category.name),
+            ),
+          );
+        },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              category.imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: Colors.grey[800],
+                child: const Icon(Icons.image_not_supported, color: Colors.white30),
               ),
-            );
-          },
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Image.asset(
-                category.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: Colors.grey[800],
-                  child: const Icon(Icons.image_not_supported, color: Colors.white30),
+            ),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.transparent, Color.fromRGBO(0, 0, 0, 0.8)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
               ),
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.transparent, Color.fromRGBO(0, 0, 0, 0.8)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
+            ),
+            Positioned(
+              bottom: 12,
+              left: 12,
+              right: 12,
+              child: Text(
+                category.name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              Positioned(
-                bottom: 12,
-                left: 12,
-                right: 12,
-                child: Text(
-                  category.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
