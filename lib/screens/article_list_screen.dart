@@ -1,36 +1,157 @@
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
+
 import '../models.dart';
 import '../dummy_data.dart';
-import 'article_detail_screen.dart'; // We will create this next
+import 'article_detail_screen.dart';
 
-class ArticleListScreen extends StatelessWidget {
+// --- MODIFIED: Converted to a StatefulWidget to manage state ---
+class ArticleListScreen extends StatefulWidget {
   final String categoryName;
 
   const ArticleListScreen({super.key, required this.categoryName});
 
   @override
-  Widget build(BuildContext context) {
-    // Fetch the articles for the given category
-    final List<Article> articles = DummyDataService.getArticlesByCategory(categoryName);
+  State<ArticleListScreen> createState() => _ArticleListScreenState();
+}
 
+class _ArticleListScreenState extends State<ArticleListScreen> {
+  // --- NEW: State variables for loading, errors, and data ---
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<Article> _articles = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchArticles();
+  }
+
+  // --- NEW: Function to fetch articles with simulated delay ---
+  Future<void> _fetchArticles() async {
+    // Ensure the widget is still mounted before proceeding
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Simulate network delay
+      await Future.delayed(const Duration(seconds: 1));
+      final articles = DummyDataService.getArticlesByCategory(widget.categoryName);
+
+      if (mounted) {
+        setState(() {
+          _articles = articles;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = "Failed to load articles. Please try again.";
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('$categoryName Articles'),
+        title: Text('${widget.categoryName} Articles'),
       ),
-      body: ListView.builder(
-        itemCount: articles.length,
+      body: _buildBody(),
+    );
+  }
+
+  // --- NEW: Body builder to handle different states ---
+  Widget _buildBody() {
+    if (_isLoading) {
+      return _buildShimmer();
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 60),
+            const SizedBox(height: 16),
+            Text(_errorMessage!, style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _fetchArticles,
+              child: const Text('Try Again'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_articles.isEmpty) {
+      return const Center(
+        child: Text(
+          'No articles found in this category.',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: _articles.length,
+      itemBuilder: (context, index) {
+        final article = _articles[index];
+        return ArticleListItem(
+          article: article,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ArticleDetailScreen(article: article),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // --- NEW: Shimmer loading effect widget ---
+  Widget _buildShimmer() {
+    return Shimmer.fromColors(
+      baseColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850]! : Colors.grey[300]!,
+      highlightColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[100]!,
+      child: ListView.builder(
+        itemCount: 5, // Show 5 shimmer items
         itemBuilder: (context, index) {
-          final article = articles[index];
-          return ArticleListItem(
-            article: article,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ArticleDetailScreen(article: article),
+          return Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 180,
+                  width: double.infinity,
+                  color: Colors.white, // Background color for shimmer
                 ),
-              );
-            },
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(height: 20, width: double.infinity, color: Colors.white),
+                      const SizedBox(height: 8),
+                      Container(height: 14, width: 150, color: Colors.white),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),
@@ -38,7 +159,7 @@ class ArticleListScreen extends StatelessWidget {
   }
 }
 
-// A widget for a single item in the article list
+// ArticleListItem widget remains unchanged
 class ArticleListItem extends StatelessWidget {
   final Article article;
   final VoidCallback onTap;

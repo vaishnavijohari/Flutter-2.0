@@ -1,10 +1,22 @@
 import 'package:flutter/material.dart';
+// --- NEW: Import the share_plus package ---
+import 'package:share_plus/share_plus.dart';
+
 import '../models.dart';
 
 class ArticleDetailScreen extends StatelessWidget {
   final Article article;
 
   const ArticleDetailScreen({super.key, required this.article});
+
+  // --- NEW: Function to handle the share action ---
+  void _shareArticle(BuildContext context) {
+    // In a real app, you would share a real URL to the article.
+    final String textToShare =
+        'Check out this article: ${article.title}\n\nRead more at: https://yourapp.com/articles/${article.id}';
+    
+    Share.share(textToShare, subject: 'An interesting article from Fabula');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +38,14 @@ class ArticleDetailScreen extends StatelessWidget {
                     const Center(child: Icon(Icons.image_not_supported)),
               ),
             ),
+            // --- NEW: Add actions to the SliverAppBar ---
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.share),
+                tooltip: 'Share Article',
+                onPressed: () => _shareArticle(context),
+              ),
+            ],
           ),
           SliverToBoxAdapter(
             child: Padding(

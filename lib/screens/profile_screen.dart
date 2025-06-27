@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// --- CORRECTED IMPORTS ---
 import '../providers/theme_provider.dart';
 import 'login_screen.dart';
 import 'reading_list_screen.dart';
@@ -50,11 +49,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _showChangeUsernameDialog() async {
+    // --- This part is unchanged, but we need to store the context before the dialog ---
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
     if (_lastUsernameChangeDate != null) {
       final difference = DateTime.now().difference(_lastUsernameChangeDate!);
       if (difference.inDays < 60) {
         final daysLeft = 60 - difference.inDays;
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           SnackBar(content: Text('You can change your username again in $daysLeft days.')),
         );
         return;
@@ -64,9 +66,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final newUsernameController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
+    // The showDialog call itself is an async gap.
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog( // Use a different context name to avoid confusion
         title: const Text('Change Username'),
         content: Form(
           key: formKey,
@@ -85,7 +88,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () async {
               if (formKey.currentState!.validate()) {
@@ -94,16 +97,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 await prefs.setString('username', newUsername);
                 await prefs.setInt('lastUsernameChange', DateTime.now().millisecondsSinceEpoch);
                 
-                if (mounted) {
-                  setState(() {
-                    _username = newUsername;
-                    _lastUsernameChangeDate = DateTime.now();
-                  });
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Username updated successfully!')),
-                  );
-                }
+                // --- FIX: Check if mounted BEFORE using state/context ---
+                if (!mounted) return;
+
+                setState(() {
+                  _username = newUsername;
+                  _lastUsernameChangeDate = DateTime.now();
+                });
+                
+                // Pop the dialog and show the snackbar
+                Navigator.pop(dialogContext);
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(content: Text('Username updated successfully!')),
+                );
               }
             },
             child: const Text('Save'),
@@ -117,27 +123,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
 
-    if (mounted) {
-      // Navigate to login screen and clear all previous routes
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (Route<dynamic> route) => false,
-      );
-    }
+    // --- FIX: Check if mounted BEFORE using the context ---
+    if (!mounted) return;
+
+    // Navigate to login screen and clear all previous routes
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (Route<dynamic> route) => false,
+    );
   }
 
   Future<void> _showDeleteAccountDialog() async {
      await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Account'),
         content: const Text('Are you sure you want to delete your account? This action is irreversible and all your data will be lost.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
-              Navigator.pop(context);
+              // Pop the dialog first, then call the async logout function
+              Navigator.pop(dialogContext);
               _logout(); 
             },
             child: const Text('Delete'),
@@ -149,7 +157,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // This call will now find the provider from main.dart
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.themeMode == ThemeMode.dark;
 
@@ -238,13 +245,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
+    // --- FIX: Replaced deprecated `withOpacity` ---
+    final titleColor = Theme.of(context).textTheme.bodySmall?.color;
     return Padding(
       padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+          // Use withAlpha to set opacity. (255 * 0.6) is 60% opaque.
+          color: titleColor?.withAlpha((255 * 0.6).round()),
           letterSpacing: 0.8,
         ),
       ),

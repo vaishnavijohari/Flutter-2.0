@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'main_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -42,6 +45,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
+  // --- MODIFIED: This function now handles auto-login ---
   Future<void> _handleSignUp() async {
     // Hide keyboard
     FocusScope.of(context).unfocus();
@@ -62,19 +66,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
     // If successful, you'd proceed. If not, you'd show an error.
     // --- End of Simulation ---
 
-    // IMPORTANT: Check if the widget is still mounted before showing UI
+    // --- NEW: Auto-Login Logic ---
+    // 1. Save the login state to the device
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
+    // Also save the username so it can be displayed on the profile page
+    await prefs.setString('username', _usernameController.text.trim());
+
+
+    // IMPORTANT: Check if the widget is still mounted before navigating
     if (!mounted) return;
 
-    // Show a success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Account created successfully! Please log in.'),
-        backgroundColor: Colors.green,
-      ),
+    // 2. Navigate to the main screen and clear the entire back stack
+    // This prevents the user from going back to the login/signup pages.
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const MainScreen()),
+      (Route<dynamic> route) => false, // This predicate removes all previous routes
     );
-
-    // 5. Correctly navigate back to the login screen
-    Navigator.pop(context);
   }
 
   @override
@@ -246,7 +255,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       labelStyle: const TextStyle(color: Colors.white70),
       filled: true,
       fillColor: Colors.grey[850],
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       prefixIcon: Icon(prefixIcon, color: Colors.white70),
     );
   }

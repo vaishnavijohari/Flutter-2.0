@@ -25,15 +25,15 @@ class StoryDetail extends Story {
   final List<Chapter> chapters;
 
   StoryDetail({
-    required String id,
-    required String title,
-    required String imageUrl,
+    required super.id,
+    required super.title,
+    required super.imageUrl,
     required this.author,
     required this.views,
     required this.description,
     required this.genres,
     required this.chapters,
-  }) : super(id: id, title: title, imageUrl: imageUrl);
+  });
 }
 
 

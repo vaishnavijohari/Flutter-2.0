@@ -37,6 +37,8 @@ dependencies:
   #HTTPS
   http: ^1.2.1
 
+  share_plus: ^9.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
