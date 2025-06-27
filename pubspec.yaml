@@ -10,17 +10,26 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  
+  # Icons and UI Packages
   cupertino_icons: ^1.0.2
   carousel_slider: ^4.2.1
   google_fonts: ^6.1.0
-  font_awesome_flutter: ^10.6.0
+  font_awesome_flutter: ^10.7.0 # Updated version
+  shimmer: ^3.0.0
+  
+  # Charting Package
+  fl_chart: ^0.68.0 # <-- ADDED: This will fix your errors
+  intl: ^0.19.0
+
+  # State Management & Services
+  provider: ^6.1.2
+  shared_preferences: ^2.2.3
+
+  # Social Logins
   google_sign_in: ^6.2.1
   flutter_facebook_auth: ^6.0.2
   twitter_login: ^4.4.0
-  provider: ^6.1.2
-  shimmer: ^3.0.0
-  shared_preferences: ^2.2.3
-  
 
 dev_dependencies:
   flutter_test:
@@ -30,5 +39,15 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  # Asset declaration
   assets:
     - assets/logo.png
+    - assets/images/ # <-- ADDED: Includes all images in this folder
+
+  # Font declaration
+  # To use this, create a 'fonts' folder in your project's root
+  # and place the Cinzel-Regular.ttf (or similar) file inside it.
+  # fonts:
+  #   - family: Cinzel
+  #     fonts:
+  #       - asset: fonts/Cinzel-Regular.ttf
