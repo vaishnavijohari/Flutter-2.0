@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// --- UPDATED: Import the new reading list screen ---
+import 'reading_list_screen.dart';
+
 // You will need to create and import these files
 // import '../providers/theme_provider.dart';
 // import 'login_screen.dart';
@@ -181,10 +184,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // --- Settings Section ---
                 _buildSectionTitle('Settings'),
                 _buildThemeToggle(isDarkMode, themeProvider),
+                // --- THIS IS THE UPDATED PART ---
                 _buildListTile(
                   icon: Icons.bookmark_border,
                   title: 'My Reading List',
-                  onTap: () { /* Navigate to Reading List Screen */ },
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ReadingListScreen()),
+                    );
+                  },
                 ),
                 const Divider(),
 

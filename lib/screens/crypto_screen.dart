@@ -4,6 +4,9 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
+// --- UPDATED: Import the new article list screen ---
+import 'article_list_screen.dart';
+
 // --- MODEL CLASSES ---
 
 class CryptoCurrency {
@@ -189,7 +192,6 @@ class _CryptoScreenState extends State<CryptoScreen> {
   Widget _buildPriceInfo() {
     final bool isPositive = _selectedCrypto.change24h >= 0;
     final Color changeColor = isPositive ? Colors.greenAccent : Colors.redAccent;
-    // 3. --- IMPROVED NUMBER FORMATTING ---
     final priceFormat = NumberFormat.currency(
       locale: 'en_US',
       symbol: '\$',
@@ -282,7 +284,6 @@ class PriceChart extends StatelessWidget {
         LineChartData(
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              // --- CORRECTION 1: API CHANGE for tooltip color ---
               getTooltipColor: (spot) => Colors.blueGrey.withAlpha(204),
               getTooltipItems: (touchedSpots) {
                 return touchedSpots.map((spot) {
@@ -309,7 +310,6 @@ class PriceChart extends StatelessWidget {
               belowBarData: BarAreaData(
                 show: true,
                 gradient: LinearGradient(
-                  // --- CORRECTION 2: Deprecation warning ---
                   colors: [Colors.cyanAccent.withAlpha(77), Colors.transparent],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -334,12 +334,15 @@ class ArticleCategoryCard extends StatelessWidget {
       margin: const EdgeInsets.only(right: 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
+        // --- THIS IS THE UPDATED PART ---
         child: InkWell(
           onTap: () {
-            // --- CORRECTION 3: Removed print statement ---
-            // Placeholder for navigation
-            // Example of future navigation:
-            // Navigator.push(context, MaterialPageRoute(builder: (_) => ArticleListScreen(category: category.name)));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ArticleListScreen(categoryName: category.name),
+              ),
+            );
           },
           child: Stack(
             fit: StackFit.expand,
@@ -352,7 +355,6 @@ class ArticleCategoryCard extends StatelessWidget {
                   child: const Icon(Icons.image_not_supported, color: Colors.white30),
                 ),
               ),
-              // --- CORRECTION 4: Added const for performance ---
               const DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
