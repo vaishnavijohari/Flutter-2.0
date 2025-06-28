@@ -14,12 +14,8 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const StoriesScreen(),
-    const CryptoScreen(),
-    const ProfileScreen(),
-  ];
+  // --- REMOVED: The list of screens is no longer a state variable. ---
+  // final List<Widget> _screens = [ ... ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -29,30 +25,52 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // --- NEW: Define the list of screens inside the build method. ---
+    // This ensures they are rebuilt with the correct theme when the app's theme changes.
+    final List<Widget> screens = [
+      const HomeScreen(),
+      const StoriesScreen(),
+      const CryptoScreen(),
+      const ProfileScreen(),
+    ];
+
     return Scaffold(
-      body: _screens[_selectedIndex],
+      // --- MODIFIED: Use IndexedStack to preserve state across tabs ---
+      // IndexedStack keeps all children in memory but only shows the one at the current index.
+      // This is perfect for bottom navigation bars as it preserves scroll position and state on each tab.
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: screens,
+      ),
+      
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        backgroundColor: Colors.black,
-        selectedItemColor: Colors.tealAccent,
+        // Using theme colors for a more integrated look
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
         unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
+        type: BottomNavigationBarType.fixed, // Good for 3-5 items
+        elevation: 5, // Add a little elevation
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.menu_book),
+            icon: Icon(Icons.menu_book_outlined),
+            activeIcon: Icon(Icons.menu_book),
             label: 'Stories',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.currency_bitcoin),
+            activeIcon: Icon(Icons.currency_bitcoin),
             label: 'Crypto',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],

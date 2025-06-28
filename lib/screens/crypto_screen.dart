@@ -3,17 +3,17 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
-import '../services/crypto_api_service.dart'; // Import the API service
+import '../services/crypto_api_service.dart';
 import 'article_list_screen.dart';
 
 // Model for CryptoCurrency
 class CryptoCurrency {
-  final String id; // e.g., 'bitcoin', 'ethereum'
+  final String id;
   final String name;
   final String symbol;
   final double price;
   final double change24h;
-  Map<TimeRange, List<FlSpot>> priceData; // Made this non-final to update it
+  Map<TimeRange, List<FlSpot>> priceData;
 
   CryptoCurrency({
     required this.id,
@@ -167,8 +167,6 @@ class _CryptoScreenState extends State<CryptoScreen> {
     );
   }
   
-  // --- ALL THE MISSING BUILDER METHODS ARE NOW RESTORED ---
-  
   Widget _buildHeader() {
     return const Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -288,8 +286,6 @@ class _CryptoScreenState extends State<CryptoScreen> {
   }
 }
 
-// --- ALL THE MISSING WIDGET CLASSES ARE NOW RESTORED ---
-
 class PriceChart extends StatelessWidget {
   final CryptoCurrency crypto;
   final TimeRange timeRange;
@@ -319,7 +315,8 @@ class PriceChart extends StatelessWidget {
         LineChartData(
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (spot) => Colors.blueGrey.withOpacity(0.8),
+              // --- FIX: Replaced deprecated withOpacity ---
+              getTooltipColor: (spot) => Colors.blueGrey.withAlpha((255 * 0.8).round()),
               getTooltipItems: (touchedSpots) {
                 return touchedSpots.map((spot) {
                   return LineTooltipItem(
@@ -401,22 +398,23 @@ class PriceChart extends StatelessWidget {
 
   double _getBottomTitleInterval(List<FlSpot> spots) {
     if (spots.isEmpty) return 1;
-    return spots.length / 4; // Aim for about 4 labels on the X-axis
+    return spots.length / 4;
   }
 
   String _getBottomTitleForValue(int index, List<FlSpot> spots) {
     if (index < 0 || index >= spots.length) return '';
-    final timestamp = spots[index].x.toInt();
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    // NOTE: This assumes the 'x' value is a timestamp in milliseconds.
+    // The dummy data from the API service needs to provide this.
+    final date = DateTime.fromMillisecondsSinceEpoch(spots[index].x.toInt());
     
     switch (timeRange) {
       case TimeRange.oneDay:
-        return DateFormat('ha').format(date);
+        return DateFormat('ha').format(date); // e.g., 3PM
       case TimeRange.oneWeek:
       case TimeRange.oneMonth:
-        return DateFormat('d MMM').format(date);
+        return DateFormat('d MMM').format(date); // e.g., 15 Jun
       case TimeRange.sixMonths:
-        return DateFormat('MMM').format(date);
+        return DateFormat('MMM').format(date); // e.g., Jun
     }
   }
 }
