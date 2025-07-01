@@ -1,41 +1,7 @@
 import 'dart:math';
-import '../models.dart'; // Make sure this file exists and contains your Story, Chapter, etc. models
+import '../models.dart'; // This import is now the single source of truth for your models
 
-// A simple model to bundle all home page data together
-class HomePageData {
-  final List<Story> newlyAddedStories;
-  final List<TrendingStory> dailyTrending;
-  final List<TrendingStory> weeklyTrending;
-  final List<TrendingStory> monthlyTrending;
-  final List<LatestUpdate> latestUpdates;
-
-  HomePageData({
-    required this.newlyAddedStories,
-    required this.dailyTrending,
-    required this.weeklyTrending,
-    required this.monthlyTrending,
-    required this.latestUpdates,
-  });
-}
-
-// Local models for the repository.
-class TrendingStory {
-  final String id;
-  final String coverImageUrl;
-  final String title;
-  final int views;
-  TrendingStory({required this.id, required this.coverImageUrl, required this.title, required this.views});
-}
-
-class LatestUpdate {
-  final String id;
-  final String coverImageUrl;
-  final String title;
-  final String chapter;
-  final String time;
-  LatestUpdate({required this.id, required this.coverImageUrl, required this.title, required this.chapter, required this.time});
-}
-
+// The HomePageData, TrendingStory, and LatestUpdate classes have been removed from here.
 
 class StoryRepository {
   // --- Home Screen Data ---

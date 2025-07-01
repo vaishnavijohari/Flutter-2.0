@@ -40,7 +40,7 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
     try {
       // Simulate network delay
       await Future.delayed(const Duration(seconds: 1));
-      final articles = DummyDataService.getArticlesByCategory(widget.categoryName);
+      final articles = MockData.getArticlesByCategory(widget.categoryName);
 
       if (mounted) {
         setState(() {

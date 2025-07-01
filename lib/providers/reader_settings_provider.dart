@@ -7,6 +7,12 @@ enum ReaderFontFamily { serif, sansSerif }
 
 /// A provider class to manage and persist the reader's UI settings.
 class ReaderSettingsProvider with ChangeNotifier {
+  // --- ADDED: Keys for SharedPreferences for better maintainability ---
+  static const _kFontSizeKey = 'readerFontSize';
+  static const _kThemeKey = 'readerTheme';
+  static const _kFontFamilyKey = 'readerFontFamily';
+
+
   // Private backing fields for settings
   double _fontSize = 18.0;
   ReaderTheme _theme = ReaderTheme.dark;
@@ -43,16 +49,6 @@ class ReaderSettingsProvider with ChangeNotifier {
 
   /// Returns the font family name as a string.
   String get font {
-    // For this to work, you must add these fonts to your pubspec.yaml
-    // and place the font files in an 'assets/fonts/' directory.
-    // e.g.,
-    // fonts:
-    //   - family: Merriweather
-    //     fonts:
-    //       - asset: assets/fonts/Merriweather-Regular.ttf
-    //   - family: Roboto
-    //     fonts:
-    //       - asset: assets/fonts/Roboto-Regular.ttf
     return _fontFamily == ReaderFontFamily.serif ? 'Merriweather' : 'Roboto';
   }
 
@@ -64,10 +60,10 @@ class ReaderSettingsProvider with ChangeNotifier {
   /// Loads the saved settings from SharedPreferences.
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    _fontSize = prefs.getDouble('readerFontSize') ?? 18.0;
-    _theme = ReaderTheme.values[prefs.getInt('readerTheme') ?? ReaderTheme.dark.index];
-    _fontFamily = ReaderFontFamily.values[prefs.getInt('readerFontFamily') ?? ReaderFontFamily.serif.index];
-    // Notify listeners to update the UI after loading.
+    // --- MODIFIED: Using key constants ---
+    _fontSize = prefs.getDouble(_kFontSizeKey) ?? 18.0;
+    _theme = ReaderTheme.values[prefs.getInt(_kThemeKey) ?? ReaderTheme.dark.index];
+    _fontFamily = ReaderFontFamily.values[prefs.getInt(_kFontFamilyKey) ?? ReaderFontFamily.serif.index];
     notifyListeners();
   }
 
@@ -75,7 +71,8 @@ class ReaderSettingsProvider with ChangeNotifier {
   Future<void> updateFontSize(double newSize) async {
     _fontSize = newSize;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('readerFontSize', newSize);
+    // --- MODIFIED: Using key constants ---
+    await prefs.setDouble(_kFontSizeKey, newSize);
     notifyListeners();
   }
 
@@ -83,15 +80,17 @@ class ReaderSettingsProvider with ChangeNotifier {
   Future<void> updateTheme(ReaderTheme newTheme) async {
     _theme = newTheme;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('readerTheme', newTheme.index);
+    // --- MODIFIED: Using key constants ---
+    await prefs.setInt(_kThemeKey, newTheme.index);
     notifyListeners();
   }
-  
+
   /// Updates the font family and saves it to the device.
   Future<void> updateFontFamily(ReaderFontFamily newFont) async {
     _fontFamily = newFont;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('readerFontFamily', newFont.index);
+    // --- MODIFIED: Using key constants ---
+    await prefs.setInt(_kFontFamilyKey, newFont.index);
     notifyListeners();
   }
 }
