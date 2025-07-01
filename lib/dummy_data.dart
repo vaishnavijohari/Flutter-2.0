@@ -1,11 +1,11 @@
+// lib/dummy_data.dart
+
 import 'dart:math';
 import 'models.dart';
 
-/// A dummy database service to get data.
-/// In a real app, this would be a class that makes API calls.
-class DummyDataService {
+// RENAMED for clarity: This class provides static mock data, not a live service.
+class MockData {
   static Story? getStoryById(String id) {
-    // ... existing code for getStoryById ...
     try {
       String title;
       if (id.startsWith('Originals-')) {
@@ -22,14 +22,13 @@ class DummyDataService {
       return Story(
         id: id,
         title: title,
-        imageUrl: 'https://via.placeholder.com/150x220?text=${title.replaceAll(' ', '+').substring(0,8)}',
+        imageUrl: 'https://via.placeholder.com/150x220?text=${title.replaceAll(' ', '+').substring(0, 8)}',
       );
     } catch (e) {
       return null;
     }
   }
 
-  // --- NEW: Method to get articles for a specific category ---
   static List<Article> getArticlesByCategory(String category) {
     final random = Random();
     return List.generate(10, (index) {

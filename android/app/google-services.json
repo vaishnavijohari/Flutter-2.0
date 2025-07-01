@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "62996163666",
+    "project_id": "freemium-novel-app",
+    "storage_bucket": "freemium-novel-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:62996163666:android:c9ee63a70d7e6595d8838b",
+        "android_client_info": {
+          "package_name": "com.example.freemium_novels_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhu6ppCneGC_cBnp0q5nvznktKu9DBE9o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

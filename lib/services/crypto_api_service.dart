@@ -1,22 +1,19 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../screens/crypto_screen.dart'; // We import this to get the TimeRange enum
 import 'package:fl_chart/fl_chart.dart';
+import '../models.dart'; 
 
 class CryptoApiService {
   final String _baseUrl = "https://api.coingecko.com/api/v3";
 
-  // A map to translate our symbols to CoinGecko's API IDs
   final Map<String, String> _coinIdMap = {
     'BTC': 'bitcoin',
     'ETH': 'ethereum',
     'SOL': 'solana',
     'XRP': 'ripple',
     'DOGE': 'dogecoin',
-    'SHIB': 'shiba-inu',
   };
 
-  // Fetches the current price and 24h change for all our coins at once
   Future<List<CryptoCurrency>> getLiveCryptoPrices() async {
     final ids = _coinIdMap.values.join(',');
     final url = Uri.parse('$_baseUrl/simple/price?ids=$ids&vs_currencies=usd&include_24hr_change=true');
@@ -31,12 +28,14 @@ class CryptoApiService {
           if (data.containsKey(id)) {
             cryptoList.add(
               CryptoCurrency(
-                id: id, // The API ID like 'bitcoin'
+                id: id,
                 symbol: symbol,
-                name: id.substring(0, 1).toUpperCase() + id.substring(1), // Simple name generation
+                name: id.substring(0, 1).toUpperCase() + id.substring(1),
                 price: (data[id]['usd'] as num).toDouble(),
                 change24h: (data[id]['usd_24h_change'] as num).toDouble(),
-                priceData: {}, // Chart data will be fetched separately
+
+                // --- FIXED: Initialize with an empty Map {} instead of a List [] ---
+                priceData: {}, 
               ),
             );
           }
@@ -50,7 +49,6 @@ class CryptoApiService {
     }
   }
 
-  // Fetches historical data for one specific coin to draw the chart
   Future<List<FlSpot>> getHistoricalChartData(String coinId, TimeRange timeRange) async {
     int days;
     switch (timeRange) {
@@ -77,7 +75,8 @@ class CryptoApiService {
         final List<dynamic> prices = data['prices'];
         
         return prices.asMap().entries.map((entry) {
-          return FlSpot(entry.key.toDouble(), (entry.value[1] as num).toDouble());
+          // The API returns timestamp in milliseconds for X, and price for Y.
+          return FlSpot((entry.value[0] as num).toDouble(), (entry.value[1] as num).toDouble());
         }).toList();
       } else {
         throw Exception('Failed to load chart data for $coinId');

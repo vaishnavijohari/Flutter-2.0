@@ -44,7 +44,7 @@ class _ReadingListScreenState extends State<ReadingListScreen> {
     final random = Random();
 
     for (final id in storyIds) {
-      final story = DummyDataService.getStoryById(id);
+      final story = MockData.getStoryById(id);
       if (story != null) {
         // Simulate that some stories have been updated
         final bool hasUpdate = random.nextDouble() > 0.7; // 30% chance of being updated

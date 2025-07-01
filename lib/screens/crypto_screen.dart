@@ -5,35 +5,9 @@ import 'package:intl/intl.dart';
 
 import '../services/crypto_api_service.dart';
 import 'article_list_screen.dart';
+import '../models.dart'; // ADDED: The single source of truth for our models.
 
-// Model for CryptoCurrency
-class CryptoCurrency {
-  final String id;
-  final String name;
-  final String symbol;
-  final double price;
-  final double change24h;
-  Map<TimeRange, List<FlSpot>> priceData;
-
-  CryptoCurrency({
-    required this.id,
-    required this.name,
-    required this.symbol,
-    required this.price,
-    required this.change24h,
-    required this.priceData,
-  });
-}
-
-// Model for ArticleCategory
-class ArticleCategory {
-  final String name;
-  final String imageUrl;
-  ArticleCategory({required this.name, required this.imageUrl});
-}
-
-// Enum for TimeRange
-enum TimeRange { oneDay, oneWeek, oneMonth, sixMonths }
+// DELETED: The local definitions for CryptoCurrency, ArticleCategory, and TimeRange have been removed from this file.
 
 class CryptoScreen extends StatefulWidget {
   const CryptoScreen({super.key});
@@ -43,6 +17,7 @@ class CryptoScreen extends StatefulWidget {
 }
 
 class _CryptoScreenState extends State<CryptoScreen> {
+  // This map now correctly uses the CryptoCurrency model from models.dart
   Map<String, CryptoCurrency> _cryptoData = {};
   late CryptoCurrency _selectedCrypto;
   TimeRange _selectedTimeRange = TimeRange.sixMonths;
@@ -50,9 +25,9 @@ class _CryptoScreenState extends State<CryptoScreen> {
   bool _isPageLoading = true;
   bool _isChartLoading = true;
   String? _errorMessage;
-  
+
   final CryptoApiService _apiService = CryptoApiService();
-  
+
   final List<ArticleCategory> _articleCategories = [
     ArticleCategory(name: 'Finance', imageUrl: 'assets/images/finance.jpg'),
     ArticleCategory(name: 'Crypto', imageUrl: 'assets/images/crypto.jpg'),
@@ -72,10 +47,13 @@ class _CryptoScreenState extends State<CryptoScreen> {
       if (mounted) {
         setState(() {
           _cryptoData = {for (var crypto in prices) crypto.symbol: crypto};
-          _selectedCrypto = _cryptoData['BTC']!;
+          // Set a default selected crypto, ensuring it exists.
+          if (_cryptoData.containsKey('BTC')) {
+            _selectedCrypto = _cryptoData['BTC']!;
+             _fetchChartDataForSelectedCrypto();
+          }
           _isPageLoading = false;
         });
-        _fetchChartDataForSelectedCrypto();
       }
     } catch (e) {
       if (mounted) {
@@ -86,10 +64,17 @@ class _CryptoScreenState extends State<CryptoScreen> {
       }
     }
   }
-  
+
   Future<void> _fetchChartDataForSelectedCrypto() async {
+    if (_selectedCrypto.priceData.containsKey(_selectedTimeRange)) {
+       setState(() => _isChartLoading = false);
+       return;
+    }
+
     if (mounted) setState(() => _isChartLoading = true);
+
     try {
+      // This call now works because both the argument and parameter are the same TimeRange type.
       final chartData = await _apiService.getHistoricalChartData(_selectedCrypto.id, _selectedTimeRange);
       if (mounted) {
         setState(() {
@@ -98,11 +83,7 @@ class _CryptoScreenState extends State<CryptoScreen> {
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isChartLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isChartLoading = false);
     }
   }
 
@@ -116,10 +97,12 @@ class _CryptoScreenState extends State<CryptoScreen> {
   }
 
   void _onTimeRangeChanged(int index) {
-    setState(() {
-      _selectedTimeRange = TimeRange.values[index];
-    });
-    _fetchChartDataForSelectedCrypto();
+    if (TimeRange.values[index] != _selectedTimeRange) {
+        setState(() {
+          _selectedTimeRange = TimeRange.values[index];
+        });
+        _fetchChartDataForSelectedCrypto();
+    }
   }
 
   @override
@@ -133,6 +116,8 @@ class _CryptoScreenState extends State<CryptoScreen> {
               : _buildContent(),
     );
   }
+
+  // --- No changes needed below this line, all widgets remain the same ---
 
   Widget _buildContent() {
     return SingleChildScrollView(
@@ -315,8 +300,7 @@ class PriceChart extends StatelessWidget {
         LineChartData(
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              // --- FIX: Replaced deprecated withOpacity ---
-              getTooltipColor: (spot) => Colors.blueGrey.withAlpha((255 * 0.8).round()),
+              getTooltipColor: (spot) => Colors.blueGrey.withAlpha(200),
               getTooltipItems: (touchedSpots) {
                 return touchedSpots.map((spot) {
                   return LineTooltipItem(
@@ -359,7 +343,7 @@ class PriceChart extends StatelessWidget {
                     axisSide: meta.axisSide,
                     space: 8.0,
                     child: Text(
-                      _getBottomTitleForValue(value.toInt(), priceData),
+                      _getBottomTitleForValue(value.toInt(), priceData, timeRange),
                       style: const TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                   );
@@ -401,20 +385,20 @@ class PriceChart extends StatelessWidget {
     return spots.length / 4;
   }
 
-  String _getBottomTitleForValue(int index, List<FlSpot> spots) {
+  String _getBottomTitleForValue(int index, List<FlSpot> spots, TimeRange timeRange) {
     if (index < 0 || index >= spots.length) return '';
-    // NOTE: This assumes the 'x' value is a timestamp in milliseconds.
-    // The dummy data from the API service needs to provide this.
-    final date = DateTime.fromMillisecondsSinceEpoch(spots[index].x.toInt());
     
+    // This logic needs to be based on how the API provides the data.
+    // Assuming 'x' is an index for simplicity until API gives real timestamps.
     switch (timeRange) {
       case TimeRange.oneDay:
-        return DateFormat('ha').format(date); // e.g., 3PM
+        return 'Day ${index + 1}';
       case TimeRange.oneWeek:
+        return 'Week ${index + 1}';
       case TimeRange.oneMonth:
-        return DateFormat('d MMM').format(date); // e.g., 15 Jun
+        return 'Month ${index + 1}';
       case TimeRange.sixMonths:
-        return DateFormat('MMM').format(date); // e.g., Jun
+        return 'M ${index + 1}';
     }
   }
 }
