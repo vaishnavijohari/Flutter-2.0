@@ -1,5 +1,3 @@
-// lib/screens/login_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -53,6 +51,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
       body: AuthBackground(
         child: Form(
@@ -66,18 +66,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const FaIcon(FontAwesomeIcons.lockOpen, color: Colors.white, size: 28),
+                    // FIXED: Replaced onBackground with onSurface
+                    FaIcon(FontAwesomeIcons.lockOpen, color: theme.colorScheme.onSurface, size: 28),
                     const SizedBox(width: 12),
-                    // FIXED: Wrapped the Text widget in Flexible to prevent overflow
                     Flexible(
                       child: Text(
                         "Welcome Back!",
                         textAlign: TextAlign.center,
                         style: GoogleFonts.orbitron(
-                          color: Colors.white,
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          shadows: [Shadow(blurRadius: 10.0, color: Colors.cyan.withAlpha(128))],
+                          // FIXED: Replaced withOpacity with withAlpha
+                          shadows: [Shadow(blurRadius: 10.0, color: theme.colorScheme.primary.withAlpha((255 * 0.5).round()))],
                         ),
                       ),
                     ),
@@ -85,30 +85,27 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 48),
-
               SlideInAnimation(
                 delay: 400,
                 child: TextFormField(
                   controller: _usernameController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: _buildInputDecoration("Username or Email", Icons.person_outline),
+                  decoration: _buildInputDecoration(theme, "Username or Email", Icons.person_outline),
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter your username or email' : null,
                   textInputAction: TextInputAction.next,
                   onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_passwordFocusNode),
                 ),
               ),
               const SizedBox(height: 16),
-
               SlideInAnimation(
                 delay: 500,
                 child: TextFormField(
                   controller: _passwordController,
                   focusNode: _passwordFocusNode,
-                  style: const TextStyle(color: Colors.white),
                   obscureText: !_isPasswordVisible,
-                  decoration: _buildInputDecoration("Password", Icons.lock_outline).copyWith(
+                  decoration: _buildInputDecoration(theme, "Password", Icons.lock_outline).copyWith(
                     suffixIcon: IconButton(
-                      icon: Icon(_isPasswordVisible ? Icons.visibility_off : Icons.visibility, color: Colors.white70),
+                      // FIXED: Replaced withOpacity with withAlpha
+                      icon: Icon(_isPasswordVisible ? Icons.visibility_off : Icons.visibility, color: theme.iconTheme.color?.withAlpha((255 * 0.7).round())),
                       onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                     ),
                   ),
@@ -122,50 +119,41 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
               SlideInAnimation(
                 delay: 600,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _handleLogin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.cyanAccent,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
                   child: _isLoading
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Text("Login", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(height: 24),
-
               SlideInAnimation(
                 delay: 700,
                 child: Column(
                   children: [
-                    const Text("Or login using", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                    Text("Or login using", textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _socialButton(FontAwesomeIcons.google),
+                        _socialButton(theme, FontAwesomeIcons.google),
                         const SizedBox(width: 20),
-                        _socialButton(FontAwesomeIcons.facebook),
+                        _socialButton(theme, FontAwesomeIcons.facebook),
                         const SizedBox(width: 20),
-                        _socialButton(FontAwesomeIcons.apple),
+                        _socialButton(theme, FontAwesomeIcons.apple),
                       ],
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              
               SlideInAnimation(
                 delay: 800,
                 child: TextButton(
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SignUpScreen())),
-                  child: const Text("Don't have an account? Sign Up", style: TextStyle(color: Colors.cyanAccent)),
+                  child: Text("Don't have an account? Sign Up", style: TextStyle(color: theme.colorScheme.primary)),
                 ),
               ),
             ],
@@ -175,39 +163,38 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  InputDecoration _buildInputDecoration(String label, IconData prefixIcon) {
+  InputDecoration _buildInputDecoration(ThemeData theme, String label, IconData prefixIcon) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70),
+      // FIXED: Replaced withOpacity with withAlpha
+      labelStyle: TextStyle(color: theme.colorScheme.onSurface.withAlpha((255 * 0.7).round())),
       filled: true,
-      fillColor: Colors.black.withAlpha(77),
-      prefixIcon: Icon(prefixIcon, color: Colors.white70),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-      ),
+      fillColor: theme.colorScheme.surface,
+      // FIXED: Replaced withOpacity with withAlpha
+      prefixIcon: Icon(prefixIcon, color: theme.colorScheme.onSurface.withAlpha((255 * 0.7).round())),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.cyanAccent),
+        borderSide: BorderSide(color: theme.colorScheme.primary),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.redAccent),
+        borderSide: BorderSide(color: theme.colorScheme.error),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+        borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
       ),
     );
   }
 
-  Widget _socialButton(IconData icon) {
+  Widget _socialButton(ThemeData theme, IconData icon) {
     return IconButton(
       onPressed: () { /* TODO: Implement Social Login */ },
-      icon: FaIcon(icon, color: Colors.white, size: 24),
+      icon: FaIcon(icon, size: 24),
       style: IconButton.styleFrom(
-        backgroundColor: Colors.black.withAlpha(51),
-        side: BorderSide(color: Colors.white.withAlpha(51)),
+        backgroundColor: theme.colorScheme.surface,
+        side: BorderSide(color: theme.dividerColor),
         padding: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

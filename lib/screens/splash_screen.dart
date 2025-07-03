@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -8,15 +7,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'login_screen.dart';
 import 'main_screen.dart';
 
-// --- NEW: Helper class to return multiple values from our loading function ---
-// This replaces the Dart 3 "Record" syntax to ensure compatibility.
 class _LoadingResult {
   final bool hasConnection;
   final bool isLoggedIn;
-
   _LoadingResult({required this.hasConnection, required this.isLoggedIn});
 }
-
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -36,28 +31,18 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   @override
   void initState() {
     super.initState();
-
-    _introController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
+    _introController = AnimationController(duration: const Duration(milliseconds: 1500), vsync: this)..forward();
     _fadeAnimation = CurvedAnimation(parent: _introController, curve: Curves.easeIn);
     _scaleAnimation = CurvedAnimation(parent: _introController, curve: Curves.easeOutBack);
-
-    _introController.forward();
     _startSplashSequence();
   }
 
   Future<void> _startSplashSequence() async {
     final minSplashTime = Future.delayed(const Duration(seconds: 4));
-
-    // --- MODIFIED: Awaiting our new helper class ---
     final loadingResult = await _loadData();
-
     await minSplashTime;
 
     if (!mounted) return;
-
     setState(() {
       _isLoading = false;
       _hasInternet = loadingResult.hasConnection;
@@ -73,16 +58,11 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     }
   }
 
-  // --- MODIFIED: This function now returns our new _LoadingResult class ---
   Future<_LoadingResult> _loadData() async {
     final connectivityResult = await Connectivity().checkConnectivity();
     final prefs = await SharedPreferences.getInstance();
-
-    final hasInternet = connectivityResult.contains(ConnectivityResult.mobile) ||
-        connectivityResult.contains(ConnectivityResult.wifi);
-    
+    final hasInternet = connectivityResult.contains(ConnectivityResult.mobile) || connectivityResult.contains(ConnectivityResult.wifi);
     final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-
     return _LoadingResult(hasConnection: hasInternet, isLoggedIn: isLoggedIn);
   }
 
@@ -94,17 +74,18 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    // --- CORRECTED: Replaced all .withOpacity() with .withAlpha() ---
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: const Color(0xff0A091E),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
-          Positioned(top: -100, left: -150, child: _buildLightBlob(const Color(0xff583D72), 400)),
-          Positioned(bottom: -150, right: -200, child: _buildLightBlob(const Color(0xff2E4C6D), 500)),
-          BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 120, sigmaY: 120),
-            child: Container(color: Colors.black.withAlpha((255 * 0.1).round())),
-          ),
+          Positioned(top: -100, left: -150, child: _buildLightBlob(theme.colorScheme.primary, 400)),
+          Positioned(bottom: -150, right: -200, child: _buildLightBlob(theme.colorScheme.secondary, 500)),
+          
+          // FIXED: Replaced withOpacity with withAlpha
+          Container(color: theme.scaffoldBackgroundColor.withAlpha((255 * 0.5).round())),
+
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -120,8 +101,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             shape: BoxShape.rectangle,
                             borderRadius: BorderRadius.circular(35),
                             boxShadow: [
-                              BoxShadow(color: Colors.purpleAccent.withAlpha((255 * 0.3).round()), blurRadius: 25.0, spreadRadius: 5.0),
-                              BoxShadow(color: Colors.cyanAccent.withAlpha((255 * 0.3).round()), blurRadius: 25.0, spreadRadius: 5.0)
+                              // FIXED: Replaced withOpacity with withAlpha
+                              BoxShadow(color: theme.colorScheme.primary.withAlpha((255 * 0.3).round()), blurRadius: 25.0, spreadRadius: 5.0),
+                              BoxShadow(color: theme.colorScheme.secondary.withAlpha((255 * 0.3).round()), blurRadius: 25.0, spreadRadius: 5.0)
                             ],
                           ),
                           child: ClipRRect(
@@ -138,10 +120,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             style: GoogleFonts.orbitron(
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white.withAlpha((255 * 0.95).round()),
                               shadows: [
-                                const Shadow(blurRadius: 10.0, color: Colors.black, offset: Offset(2.0, 2.0)),
-                                Shadow(blurRadius: 15.0, color: Colors.cyan.withAlpha((255 * 0.5).round())),
+                                const Shadow(blurRadius: 10.0, color: Colors.black26, offset: Offset(2.0, 2.0)),
+                                // FIXED: Replaced withOpacity with withAlpha
+                                Shadow(blurRadius: 15.0, color: theme.colorScheme.primary.withAlpha((255 * 0.5).round())),
                               ],
                             ),
                           ),
@@ -152,7 +134,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                           textAlign: TextAlign.center,
                           style: GoogleFonts.exo2(
                             fontSize: 15,
-                            color: Colors.white.withAlpha((255 * 0.6).round()),
+                            color: theme.textTheme.bodySmall?.color,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -165,11 +147,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   padding: const EdgeInsets.symmetric(horizontal: 40.0),
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 500),
-                    transitionBuilder: (child, animation) {
-                      return FadeTransition(opacity: animation, child: child);
-                    },
+                    transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
                     child: _isLoading
-                        ? const _LoadingWidget()
+                        ? _LoadingWidget(progressColor: theme.colorScheme.primary)
                         : !_hasInternet
                             ? _NoInternetWidget(onRetry: _startSplashSequence)
                             : const SizedBox(key: ValueKey('empty'), height: 50),
@@ -190,8 +170,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(
-          colors: [color.withAlpha((255 * 0.4).round()), color.withAlpha(0)],
-          stops: const [0.0, 1.0],
+          // FIXED: Replaced withOpacity with withAlpha
+          colors: [color.withAlpha((255 * 0.3).round()), Colors.transparent],
         ),
       ),
     );
@@ -204,36 +184,25 @@ class _NoInternetWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       key: const ValueKey('no-internet'),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.black.withAlpha((255 * 0.3).round()),
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.wifi_off_rounded, color: Colors.cyanAccent.withAlpha((255 * 0.8).round()), size: 32),
+          Icon(Icons.wifi_off_rounded, color: theme.colorScheme.primary, size: 32),
           const SizedBox(height: 12),
-          Text(
-            'No Internet Connection',
-            style: TextStyle(color: Colors.white.withAlpha((255 * 0.9).round()), fontWeight: FontWeight.bold, fontSize: 16),
-          ),
+          const Text('No Internet Connection', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 4),
-          Text(
-            'Please connect to the internet to continue.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white.withAlpha((255 * 0.7).round()), fontSize: 14),
-          ),
+          Text('Please connect to the internet to continue.', textAlign: TextAlign.center, style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 14)),
           const SizedBox(height: 16),
-          TextButton(
+          ElevatedButton(
             onPressed: onRetry,
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.black,
-              backgroundColor: Colors.cyanAccent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-            ),
             child: const Text('Retry'),
           ),
         ],
@@ -243,7 +212,8 @@ class _NoInternetWidget extends StatelessWidget {
 }
 
 class _LoadingWidget extends StatelessWidget {
-  const _LoadingWidget();
+  final Color progressColor;
+  const _LoadingWidget({required this.progressColor});
 
   @override
   Widget build(BuildContext context) {
@@ -251,18 +221,15 @@ class _LoadingWidget extends StatelessWidget {
       key: const ValueKey('loading'),
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          'Loading...',
-          style: TextStyle(color: Colors.white.withAlpha((255 * 0.7).round())),
-        ),
+        const Text('Loading...'),
         const SizedBox(height: 8),
         SizedBox(
           height: 8,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
-              backgroundColor: Colors.white.withAlpha((255 * 0.1).round()),
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.cyanAccent),
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              valueColor: AlwaysStoppedAnimation<Color>(progressColor),
             ),
           ),
         ),

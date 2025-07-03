@@ -54,17 +54,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final difference = DateTime.now().difference(_lastUsernameChangeDate!);
       if (difference.inDays < 60) {
         final daysLeft = 60 - difference.inDays;
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('You can change your username again in $daysLeft days.')),
-          );
-        }
+        // Check if mounted BEFORE using context
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You can change your username again in $daysLeft days.')),
+        );
         return;
       }
     }
 
     final newUsernameController = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    
+    // Check if mounted BEFORE using context for the theme
+    if (!mounted) return;
     final theme = Theme.of(context);
 
     final bool? wasUsernameChanged = await showDialog<bool>(
@@ -102,18 +105,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
+    // After the dialog closes (an async gap), check if the widget is still mounted
     if (wasUsernameChanged == true) {
       await _loadProfileData();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Username updated successfully!')),
-        );
-      }
+
+      // --- FIXED: Added another mounted check after the await call ---
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Username updated successfully!')),
+      );
     }
   }
 
-  // --- NEW: Dialog to confirm user logout ---
   Future<void> _showLogoutDialog() async {
+    if (!mounted) return;
     final theme = Theme.of(context);
     final bool? confirmed = await showDialog<bool>(
       context: context,
@@ -135,7 +140,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    // If the user confirmed, proceed with the actual logout
     if (confirmed == true) {
       await _logout();
     }
@@ -145,15 +149,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
 
-    if (mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (Route<dynamic> route) => false,
-      );
-    }
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (Route<dynamic> route) => false,
+    );
   }
 
   Future<void> _showDeleteAccountDialog() async {
+    if (!mounted) return;
     final theme = Theme.of(context);
      final bool? confirmed = await showDialog<bool>(
       context: context,
@@ -172,7 +176,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    if (confirmed == true && mounted) {
+    if (confirmed == true) {
       await _logout();
     }
   }
@@ -218,7 +222,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   icon: Icons.logout,
                   title: 'Log Out',
                   color: Theme.of(context).colorScheme.primary,
-                  // MODIFIED: Calls the confirmation dialog instead of logging out directly
                   onTap: _showLogoutDialog,
                 ),
                 _buildListTile(
@@ -338,7 +341,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(title, style: GoogleFonts.exo2(color: color, fontSize: 16, fontWeight: FontWeight.w500)),
-      trailing: Icon(Icons.chevron_right, color: Colors.grey.shade600),
+      trailing: Icon(Icons.chevron_right, color: Theme.of(context).unselectedWidgetColor),
       onTap: onTap,
     );
   }

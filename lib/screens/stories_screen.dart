@@ -83,8 +83,11 @@ class _StoriesScreenState extends State<StoriesScreen> {
     final query = _searchController.text.toLowerCase();
     
     if (isInitialLoad) {
-      _filteredStories = List.from(_allStoriesForCategory);
-      _isShowingSuggestions = false;
+      setState(() {
+        _filteredStories = List.from(_allStoriesForCategory);
+        _isShowingSuggestions = false;
+        _currentPage = 1;
+      });
       return;
     }
 
@@ -161,7 +164,7 @@ class _StoriesScreenState extends State<StoriesScreen> {
             padding: const EdgeInsets.only(top: 10.0, bottom: 4.0),
             child: Text(
               'No results found. Maybe you\'d like...',
-              style: TextStyle(color: Colors.grey[600], fontStyle: FontStyle.italic),
+              style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontStyle: FontStyle.italic),
             ),
           ),
         Expanded(
@@ -190,15 +193,19 @@ class _StoriesScreenState extends State<StoriesScreen> {
   }
 
   Widget _buildSearchBar() {
+    final theme = Theme.of(context);
+    // FIXED: Replaced withOpacity with withAlpha
+    final hintColor = theme.colorScheme.onSurface.withAlpha((255 * 0.5).round());
+
     return TextField(
       controller: _searchController,
-      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      style: TextStyle(color: theme.colorScheme.onSurface),
       decoration: InputDecoration(
         hintText: 'Search for stories...',
-        hintStyle: TextStyle(color: Colors.grey[600]),
-        prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+        hintStyle: TextStyle(color: hintColor),
+        prefixIcon: Icon(Icons.search, color: hintColor),
         filled: true,
-        fillColor: Theme.of(context).colorScheme.surface,
+        fillColor: theme.colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -206,7 +213,7 @@ class _StoriesScreenState extends State<StoriesScreen> {
         contentPadding: EdgeInsets.zero,
         suffixIcon: _searchController.text.isNotEmpty
             ? IconButton(
-                icon: Icon(Icons.clear, color: Colors.grey[600]),
+                icon: Icon(Icons.clear, color: hintColor),
                 onPressed: () {
                   _searchController.clear();
                 },
@@ -252,6 +259,8 @@ class _StoriesScreenState extends State<StoriesScreen> {
   
   Widget _buildGridShimmer() {
     final theme = Theme.of(context);
+    final placeholderColor = theme.colorScheme.surface;
+    
     return Shimmer.fromColors(
       baseColor: theme.brightness == Brightness.dark ? Colors.grey[900]! : Colors.grey[200]!,
       highlightColor: theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[100]!,
@@ -263,11 +272,11 @@ class _StoriesScreenState extends State<StoriesScreen> {
         itemBuilder: (context, index) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: Container(decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(12)))),
+            Expanded(child: Container(decoration: BoxDecoration(color: placeholderColor, borderRadius: BorderRadius.circular(12)))),
             const SizedBox(height: 8),
-            Container(height: 14, width: 120, color: Colors.black),
+            Container(height: 14, width: 120, color: placeholderColor),
             const SizedBox(height: 4),
-            Container(height: 14, width: 80, color: Colors.black),
+            Container(height: 14, width: 80, color: placeholderColor),
           ],
         ),
       ),
@@ -285,7 +294,6 @@ class StoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // --- THIS IS THE MODIFIED NAVIGATION ---
       onTap: () => Navigator.push(
         context,
         PageRouteBuilder(
@@ -306,7 +314,7 @@ class StoryCard extends StatelessWidget {
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(
                 color: Theme.of(context).colorScheme.surface,
-                child: Icon(Icons.image_not_supported, color: Colors.grey[700], size: 40),
+                child: Icon(Icons.image_not_supported, color: Theme.of(context).dividerColor, size: 40),
               ),
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
@@ -354,7 +362,7 @@ class PaginationControls extends StatelessWidget {
     
     final theme = Theme.of(context);
     final enabledColor = theme.colorScheme.onSurface;
-    final disabledColor = Colors.grey[700] ?? Colors.grey;
+    final disabledColor = theme.disabledColor;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),

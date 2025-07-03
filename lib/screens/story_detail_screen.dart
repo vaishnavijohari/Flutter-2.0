@@ -27,6 +27,7 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
   int _selectedChapterBatch = 0;
   final int _chaptersPerBatch = 100;
 
+
   @override
   void initState() {
     super.initState();
@@ -127,6 +128,8 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
   }
   
   SliverAppBar _buildSliverAppBar() {
+    final gradientColor = Theme.of(context).scaffoldBackgroundColor;
+
     return SliverAppBar(
       expandedHeight: 300.0,
       pinned: true,
@@ -148,7 +151,7 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withAlpha((255 * 0.8).round())],
+                  colors: [Colors.transparent, gradientColor],
                   stops: const [0.5, 1.0],
                 ),
               ),
@@ -253,7 +256,6 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
     );
   }
   
-  // --- REFORMATTED: Cleaner and more readable ---
   Widget _buildGenreTags() { 
     return Wrap(
       spacing: 8.0, 
@@ -266,22 +268,22 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
     );
   }
 
-  // --- REFORMATTED: Cleaner and more readable ---
   Widget _buildActionButtons() { 
     final theme = Theme.of(context);
     return Row(
       children: [
         Expanded(
-          child: ElevatedButton.icon(
+          child: OutlinedButton.icon(
             onPressed: _toggleReadingList,
             icon: Icon(_isInReadingList ? Icons.check_circle : Icons.add_circle_outline, size: 20),
             label: Text(
-              _isInReadingList ? 'On Your List' : 'Add to List',
+              _isInReadingList ? 'On List' : 'Add to List',
               style: GoogleFonts.exo2(fontWeight: FontWeight.bold),
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _isInReadingList ? theme.colorScheme.primaryContainer : theme.colorScheme.primary,
-              foregroundColor: _isInReadingList ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onPrimary,
+            style: OutlinedButton.styleFrom(
+              // MODIFIED: Replaced onBackground with onSurface
+              foregroundColor: _isInReadingList ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+              side: BorderSide(color: _isInReadingList ? theme.colorScheme.primary : theme.dividerColor),
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -306,11 +308,11 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
     );
   }
 
-  // --- REFORMATTED: Cleaner and more readable ---
   Widget _buildLoadingShimmer() { 
     final theme = Theme.of(context);
     final shimmerColor = theme.brightness == Brightness.dark ? Colors.grey[900]! : Colors.grey[200]!;
     final shimmerHighlight = theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[100]!;
+    final placeholderColor = theme.colorScheme.surface;
     
     return Shimmer.fromColors(
       baseColor: shimmerColor,
@@ -319,7 +321,7 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
         physics: const NeverScrollableScrollPhysics(),
         child: Column(
           children: [
-            Container(height: 300, color: Colors.black),
+            Container(height: 300, color: placeholderColor),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -327,26 +329,22 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                 children: [
                   Row(
                     children: [
-                      Container(height: 30, width: 80, color: Colors.black),
-                      const SizedBox(width: 8),
-                      Container(height: 30, width: 100, color: Colors.black),
+                      Container(height: 30, width: 80, color: placeholderColor, margin: const EdgeInsets.only(right: 8)),
+                      Container(height: 30, width: 100, color: placeholderColor),
                     ],
                   ),
                   const SizedBox(height: 24),
                   Row(
                     children: [
-                      Expanded(child: Container(height: 48, color: Colors.black)),
-                      const SizedBox(width: 16),
-                      Expanded(child: Container(height: 48, color: Colors.black)),
+                      Expanded(child: Container(height: 48, color: placeholderColor, margin: const EdgeInsets.only(right: 16))),
+                      Expanded(child: Container(height: 48, color: placeholderColor)),
                     ],
                   ),
                   const SizedBox(height: 16),
                   const Divider(),
-                  Container(height: 20, width: 150, color: Colors.black),
-                  const SizedBox(height: 8),
-                  Container(height: 14, color: Colors.black),
-                  const SizedBox(height: 6),
-                  Container(height: 14, color: Colors.black),
+                  Container(height: 20, width: 150, color: placeholderColor, margin: const EdgeInsets.only(bottom: 8)),
+                  Container(height: 14, color: placeholderColor, margin: const EdgeInsets.only(bottom: 6)),
+                  Container(height: 14, color: placeholderColor),
                 ],
               ),
             ),

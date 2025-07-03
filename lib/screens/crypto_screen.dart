@@ -23,7 +23,6 @@ class _CryptoScreenState extends State<CryptoScreen> {
   String? _errorMessage;
   List<CryptoCurrency> _cryptoList = [];
 
-  // --- MODIFIED: Updated the article categories list ---
   final List<ArticleCategory> _articleCategories = [
     ArticleCategory(name: 'Finance & Crypto', imageUrl: 'assets/images/finance_crypto.jpg'),
     ArticleCategory(name: 'Entertainment', imageUrl: 'assets/images/entertainment.jpg'),
@@ -163,6 +162,7 @@ class _CryptoScreenState extends State<CryptoScreen> {
     final theme = Theme.of(context);
     final shimmerColor = theme.brightness == Brightness.dark ? Colors.grey[900]! : Colors.grey[200]!;
     final shimmerHighlight = theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[100]!;
+    final placeholderColor = theme.colorScheme.surface; // MODIFIED
 
     return Shimmer.fromColors(
       baseColor: shimmerColor,
@@ -172,7 +172,7 @@ class _CryptoScreenState extends State<CryptoScreen> {
           width: MediaQuery.of(context).size.width * 0.8,
           height: 180,
           decoration: BoxDecoration(
-            color: Colors.black,
+            color: placeholderColor, // MODIFIED
             borderRadius: BorderRadius.circular(20),
           ),
         ),
@@ -187,7 +187,8 @@ class _CryptoScreenState extends State<CryptoScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.cloud_off, color: Colors.grey, size: 60),
+            // MODIFIED
+            Icon(Icons.cloud_off, color: Theme.of(context).disabledColor, size: 60),
             const SizedBox(height: 20),
             Text(_errorMessage!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 20),
@@ -287,10 +288,12 @@ class ArticleCategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // MODIFIED: Using theme color
+    final overlayColor = Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.black54;
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        // --- MODIFIED: This now uses PageRouteBuilder for a smooth fade transition ---
         onTap: () {
           Navigator.push(
             context,
@@ -312,13 +315,15 @@ class ArticleCategoryCard extends StatelessWidget {
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(
                 color: Theme.of(context).colorScheme.surface,
-                child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                // MODIFIED: Using theme color
+                child: Icon(Icons.image_not_supported, color: Theme.of(context).dividerColor),
               ),
             ),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.transparent, Colors.black.withAlpha((255 * 0.8).round())],
+                  // MODIFIED: Using theme-aware overlay color
+                  colors: [Colors.transparent, overlayColor.withAlpha(200)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   stops: const [0.4, 1.0]
@@ -331,6 +336,7 @@ class ArticleCategoryCard extends StatelessWidget {
               right: 12,
               child: Text(
                 category.name,
+                // MODIFIED: Text color is now always white for legibility on the dark gradient
                 style: GoogleFonts.exo2(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),

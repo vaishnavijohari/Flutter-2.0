@@ -14,9 +14,6 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  // --- REMOVED: The list of screens is no longer a state variable. ---
-  // final List<Widget> _screens = [ ... ];
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -25,8 +22,8 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // --- NEW: Define the list of screens inside the build method. ---
-    // This ensures they are rebuilt with the correct theme when the app's theme changes.
+    // This list of screens is defined in the build method to ensure
+    // they can access the correct theme when it changes.
     final List<Widget> screens = [
       const HomeScreen(),
       const StoriesScreen(),
@@ -35,9 +32,6 @@ class _MainScreenState extends State<MainScreen> {
     ];
 
     return Scaffold(
-      // --- MODIFIED: Use IndexedStack to preserve state across tabs ---
-      // IndexedStack keeps all children in memory but only shows the one at the current index.
-      // This is perfect for bottom navigation bars as it preserves scroll position and state on each tab.
       body: IndexedStack(
         index: _selectedIndex,
         children: screens,
@@ -49,9 +43,10 @@ class _MainScreenState extends State<MainScreen> {
         // Using theme colors for a more integrated look
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed, // Good for 3-5 items
-        elevation: 5, // Add a little elevation
+        // MODIFIED: Replaced hardcoded color with a theme-aware color
+        unselectedItemColor: Theme.of(context).unselectedWidgetColor,
+        type: BottomNavigationBarType.fixed,
+        elevation: 5,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),

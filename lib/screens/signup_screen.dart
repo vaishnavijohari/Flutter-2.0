@@ -1,5 +1,3 @@
-// lib/screens/signup_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -46,7 +44,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Future<void> _handleSignUp() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isLoading = true);
     await Future.delayed(const Duration(seconds: 2));
 
@@ -64,11 +61,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: BackButton(color: Colors.white.withAlpha(204)),
+        // FIXED: Replaced onBackground with onSurface
+        leading: BackButton(color: theme.colorScheme.onSurface),
       ),
       extendBodyBehindAppBar: true,
       body: AuthBackground(
@@ -83,18 +83,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const FaIcon(FontAwesomeIcons.lock, color: Colors.white, size: 28),
+                    // FIXED: Replaced onBackground with onSurface
+                    FaIcon(FontAwesomeIcons.lock, color: theme.colorScheme.onSurface, size: 28),
                     const SizedBox(width: 12),
-                    // FIXED: Wrapped the Text widget in Flexible to prevent overflow
                     Flexible(
                       child: Text(
                         "Create an Account",
                         textAlign: TextAlign.center,
                         style: GoogleFonts.orbitron(
-                          color: Colors.white,
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          shadows: [Shadow(blurRadius: 10.0, color: Colors.cyan.withAlpha(128))],
+                          // FIXED: Replaced withOpacity with withAlpha
+                          shadows: [Shadow(blurRadius: 10.0, color: theme.colorScheme.primary.withAlpha((255 * 0.5).round()))],
                         ),
                       ),
                     ),
@@ -102,13 +102,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
               const SizedBox(height: 48),
-
               SlideInAnimation(
                 delay: 400,
                 child: TextFormField(
                   controller: _usernameController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: _buildInputDecoration("Username", Icons.person_outline),
+                  decoration: _buildInputDecoration(theme, "Username", Icons.person_outline),
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a username' : null,
                   textInputAction: TextInputAction.next,
                   onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_emailFocusNode),
@@ -120,8 +118,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: TextFormField(
                   controller: _emailController,
                   focusNode: _emailFocusNode,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: _buildInputDecoration("Email", Icons.email_outlined),
+                  decoration: _buildInputDecoration(theme, "Email", Icons.email_outlined),
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Please enter your email';
@@ -138,9 +135,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: TextFormField(
                   controller: _passwordController,
                   focusNode: _passwordFocusNode,
-                  style: const TextStyle(color: Colors.white),
                   obscureText: !_isPasswordVisible,
-                  decoration: _buildInputDecoration("Password", Icons.lock_outline).copyWith(
+                  decoration: _buildInputDecoration(theme, "Password", Icons.lock_outline).copyWith(
                     suffixIcon: _buildVisibilityToggle(() => setState(() => _isPasswordVisible = !_isPasswordVisible), _isPasswordVisible),
                   ),
                   validator: (v) {
@@ -158,9 +154,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: TextFormField(
                   controller: _confirmPasswordController,
                   focusNode: _confirmPasswordFocusNode,
-                  style: const TextStyle(color: Colors.white),
                   obscureText: !_isConfirmPasswordVisible,
-                  decoration: _buildInputDecoration("Confirm Password", Icons.lock_outline).copyWith(
+                  decoration: _buildInputDecoration(theme, "Confirm Password", Icons.lock_outline).copyWith(
                     suffixIcon: _buildVisibilityToggle(() => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible), _isConfirmPasswordVisible),
                   ),
                   validator: (v) => (v != _passwordController.text) ? 'Passwords do not match' : null,
@@ -169,38 +164,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
               SlideInAnimation(
                 delay: 800,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _handleSignUp,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.cyanAccent,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
                   child: _isLoading
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Text("Sign Up", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(height: 24),
-
               SlideInAnimation(
                 delay: 900,
                 child: Column(
                   children: [
-                    const Text("Or sign up using", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                    Text("Or sign up using", textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _socialButton(FontAwesomeIcons.google),
+                        _socialButton(theme, FontAwesomeIcons.google),
                         const SizedBox(width: 20),
-                        _socialButton(FontAwesomeIcons.facebook),
+                        _socialButton(theme, FontAwesomeIcons.facebook),
                         const SizedBox(width: 20),
-                        _socialButton(FontAwesomeIcons.apple),
+                        _socialButton(theme, FontAwesomeIcons.apple),
                       ],
                     ),
                   ],
@@ -214,45 +201,45 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Widget _buildVisibilityToggle(VoidCallback onPressed, bool isVisible) {
+    // FIXED: Replaced withOpacity with withAlpha
     return IconButton(
-      icon: Icon(isVisible ? Icons.visibility_off : Icons.visibility, color: Colors.white70),
+      icon: Icon(isVisible ? Icons.visibility_off : Icons.visibility, color: Theme.of(context).iconTheme.color?.withAlpha((255 * 0.7).round())),
       onPressed: onPressed,
     );
   }
 
-  InputDecoration _buildInputDecoration(String label, IconData prefixIcon) {
+  InputDecoration _buildInputDecoration(ThemeData theme, String label, IconData prefixIcon) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70),
+      // FIXED: Replaced withOpacity with withAlpha
+      labelStyle: TextStyle(color: theme.colorScheme.onSurface.withAlpha((255 * 0.7).round())),
       filled: true,
-      fillColor: Colors.black.withAlpha(77),
-      prefixIcon: Icon(prefixIcon, color: Colors.white70),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-      ),
+      fillColor: theme.colorScheme.surface,
+      // FIXED: Replaced withOpacity with withAlpha
+      prefixIcon: Icon(prefixIcon, color: theme.colorScheme.onSurface.withAlpha((255 * 0.7).round())),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.cyanAccent),
+        borderSide: BorderSide(color: theme.colorScheme.primary),
       ),
-       errorBorder: OutlineInputBorder(
+      errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.redAccent),
+        borderSide: BorderSide(color: theme.colorScheme.error),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+        borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
       ),
     );
   }
 
-   Widget _socialButton(IconData icon) {
+   Widget _socialButton(ThemeData theme, IconData icon) {
     return IconButton(
       onPressed: () { /* TODO: Implement Social Login */ },
-      icon: FaIcon(icon, color: Colors.white, size: 24),
+      icon: FaIcon(icon, size: 24),
       style: IconButton.styleFrom(
-        backgroundColor: Colors.black.withAlpha(51),
-        side: BorderSide(color: Colors.white.withAlpha(51)),
+        backgroundColor: theme.colorScheme.surface,
+        side: BorderSide(color: theme.dividerColor),
         padding: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

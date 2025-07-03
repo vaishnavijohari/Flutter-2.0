@@ -78,7 +78,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // --- MODIFIED: This function now implements the smooth fade transition ---
   void _navigateToDetail(Story story) {
     Navigator.push(
       context,
@@ -138,6 +137,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCarouselSection(List<Story> stories) {
     if (stories.isEmpty) return const SizedBox(height: 180, child: Center(child: Text('No new stories.')));
+    
+    // MODIFIED: Using theme color for the dark overlay
+    final overlayColor = Theme.of(context).brightness == Brightness.dark 
+      ? Colors.black 
+      : Colors.black54;
+
     return SizedBox(
       height: 180,
       child: PageView.builder(
@@ -145,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
         itemBuilder: (context, index) {
           final story = stories[index % stories.length];
           return GestureDetector(
-            onTap: () => _navigateToDetail(story), // This now uses the smooth transition
+            onTap: () => _navigateToDetail(story),
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
@@ -153,7 +158,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 image: DecorationImage(
                   image: AssetImage(story.imageUrl),
                   fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(Colors.black.withAlpha((255 * 0.2).round()), BlendMode.darken)
+                  // MODIFIED: Using a theme-aware overlay color
+                  colorFilter: ColorFilter.mode(overlayColor.withAlpha(50), BlendMode.darken)
                 )
               ),
               child: Stack(
@@ -167,7 +173,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         gradient: LinearGradient(
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
-                          colors: [Colors.black.withAlpha((255 * 0.8).round()), Colors.transparent]
+                          // MODIFIED: Using a theme-aware gradient
+                          colors: [overlayColor.withAlpha(200), Colors.transparent]
                         )
                       ),
                       child: Text(
@@ -196,7 +203,8 @@ class _HomeScreenState extends State<HomeScreen> {
             labelStyle: GoogleFonts.exo2(fontWeight: FontWeight.bold),
             unselectedLabelStyle: GoogleFonts.exo2(),
             labelColor: Theme.of(context).colorScheme.primary,
-            unselectedLabelColor: Colors.grey,
+            // MODIFIED: Replaced hardcoded color with theme-aware color
+            unselectedLabelColor: Theme.of(context).textTheme.bodySmall?.color,
             indicatorColor: Theme.of(context).colorScheme.primary,
             tabs: const [Tab(text: 'Daily'), Tab(text: 'Weekly'), Tab(text: 'Monthly')],
           ),
@@ -224,7 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return TrendingListItem(
           story: story,
           rank: index + 1,
-          onTap: () => _navigateToDetail(Story(id: story.id, title: story.title, imageUrl: story.coverImageUrl)), // This now uses the smooth transition
+          onTap: () => _navigateToDetail(Story(id: story.id, title: story.title, imageUrl: story.coverImageUrl)),
         );
       },
     );
@@ -252,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   );
                 },
-                child: Text('See All>>', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                child: Text('See All', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -266,7 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
             final update = updates[index];
             return LatestUpdateListItem(
               update: update,
-              onTap: () => _navigateToDetail(Story(id: update.id, title: update.title, imageUrl: update.coverImageUrl)), // This now uses the smooth transition
+              onTap: () => _navigateToDetail(Story(id: update.id, title: update.title, imageUrl: update.coverImageUrl)),
             );
           },
         ),
@@ -344,13 +352,15 @@ class TrendingListItem extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: Image.asset(story.coverImageUrl, fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[800]),
+              // MODIFIED: Using theme color for placeholder
+              errorBuilder: (context, error, stackTrace) => Container(color: Theme.of(context).colorScheme.surface),
             ),
           ),
         ),
       ),
       title: Text(story.title, style: GoogleFonts.exo2(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Text('${story.views} Views', style: GoogleFonts.exo2(color: Colors.grey[500])),
+      // MODIFIED: Using theme color for subtitle
+      subtitle: Text('${story.views} Views', style: GoogleFonts.exo2(color: Theme.of(context).textTheme.bodySmall?.color)),
       trailing: Text('#$rank', style: GoogleFonts.orbitron(fontSize: 20, color: Theme.of(context).colorScheme.primary.withAlpha((255 * 0.7).round()))),
     );
   }
@@ -372,13 +382,15 @@ class LatestUpdateListItem extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: Image.asset(update.coverImageUrl, fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[800]),
+              // MODIFIED: Using theme color for placeholder
+              errorBuilder: (context, error, stackTrace) => Container(color: Theme.of(context).colorScheme.surface),
             ),
           ),
         ),
       ),
       title: Text(update.title, style: GoogleFonts.exo2(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis,),
-      subtitle: Text('${update.chapter} • ${update.time}', style: GoogleFonts.exo2(color: Colors.grey[500])),
+      // MODIFIED: Using theme color for subtitle
+      subtitle: Text('${update.chapter} • ${update.time}', style: GoogleFonts.exo2(color: Theme.of(context).textTheme.bodySmall?.color)),
       trailing: const Icon(Icons.chevron_right),
     );
   }
