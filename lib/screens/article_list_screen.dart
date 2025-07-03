@@ -1,11 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../models.dart';
 import '../dummy_data.dart';
 import 'article_detail_screen.dart';
 
-// --- MODIFIED: Converted to a StatefulWidget to manage state ---
 class ArticleListScreen extends StatefulWidget {
   final String categoryName;
 
@@ -16,7 +18,6 @@ class ArticleListScreen extends StatefulWidget {
 }
 
 class _ArticleListScreenState extends State<ArticleListScreen> {
-  // --- NEW: State variables for loading, errors, and data ---
   bool _isLoading = true;
   String? _errorMessage;
   List<Article> _articles = [];
@@ -27,18 +28,14 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
     _fetchArticles();
   }
 
-  // --- NEW: Function to fetch articles with simulated delay ---
   Future<void> _fetchArticles() async {
-    // Ensure the widget is still mounted before proceeding
     if (!mounted) return;
-
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      // Simulate network delay
       await Future.delayed(const Duration(seconds: 1));
       final articles = MockData.getArticlesByCategory(widget.categoryName);
 
@@ -61,92 +58,141 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${widget.categoryName} Articles'),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Stack(
+        children: [
+          _buildThemedBackground(context),
+          _buildBody(),
+        ],
       ),
-      body: _buildBody(),
     );
   }
 
-  // --- NEW: Body builder to handle different states ---
   Widget _buildBody() {
-    if (_isLoading) {
-      return _buildShimmer();
-    }
+    if (_isLoading) return _buildShimmer();
+    if (_errorMessage != null) return _buildErrorState();
 
-    if (_errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 60),
-            const SizedBox(height: 16),
-            Text(_errorMessage!, style: const TextStyle(fontSize: 16)),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _fetchArticles,
-              child: const Text('Try Again'),
-            ),
-          ],
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          title: _buildHeader(),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          automaticallyImplyLeading: true,
+          // --- FIXED: Replaced deprecated onBackground with onSurface ---
+          foregroundColor: Theme.of(context).colorScheme.onSurface,
         ),
-      );
-    }
-
-    if (_articles.isEmpty) {
-      return const Center(
-        child: Text(
-          'No articles found in this category.',
-          style: TextStyle(fontSize: 16, color: Colors.grey),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: _articles.length,
-      itemBuilder: (context, index) {
-        final article = _articles[index];
-        return ArticleListItem(
-          article: article,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ArticleDetailScreen(article: article),
+        if (_articles.isEmpty)
+          SliverFillRemaining(child: _buildEmptyState())
+        else
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  return ListItemAnimation(
+                    index: index,
+                    child: ArticleListItem(
+                      article: _articles[index],
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ArticleDetailScreen(article: _articles[index]),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+                childCount: _articles.length,
               ),
-            );
-          },
-        );
-      },
+            ),
+          ),
+      ],
     );
   }
 
-  // --- NEW: Shimmer loading effect widget ---
+  Widget _buildHeader() {
+    IconData icon;
+    switch (widget.categoryName) {
+      case 'Finance & Crypto':
+        icon = FontAwesomeIcons.moneyBillTrendUp;
+        break;
+      case 'Entertainment':
+        icon = FontAwesomeIcons.film;
+        break;
+      case 'Sports':
+        icon = FontAwesomeIcons.futbol;
+        break;
+      case 'World':
+        icon = FontAwesomeIcons.globe;
+        break;
+      default:
+        icon = Icons.article;
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FaIcon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
+        const SizedBox(width: 12),
+        Text(
+          widget.categoryName,
+          style: GoogleFonts.orbitron(fontSize: 22, fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildThemedBackground(BuildContext context) {
+    IconData icon;
+    switch (widget.categoryName) {
+      case 'Finance & Crypto': icon = FontAwesomeIcons.chartLine; break;
+      case 'Entertainment': icon = FontAwesomeIcons.masksTheater; break;
+      case 'Sports': icon = FontAwesomeIcons.trophy; break;
+      case 'World': icon = FontAwesomeIcons.earthAmericas; break;
+      default: icon = Icons.article;
+    }
+    return Align(
+      alignment: Alignment.bottomRight,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 20, bottom: 40),
+        child: FaIcon(
+          icon,
+          size: 300,
+          // --- FIXED: Replaced withOpacity with withAlpha ---
+          color: Theme.of(context).colorScheme.surface.withAlpha((255 * 0.5).round()),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() { return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.error_outline, color: Colors.red, size: 60), const SizedBox(height: 16), Text(_errorMessage!, style: const TextStyle(fontSize: 16)), const SizedBox(height: 16), ElevatedButton(onPressed: _fetchArticles, child: const Text('Try Again'))])); }
+  Widget _buildEmptyState() { return const Center(child: Text('No articles found in this category.', style: TextStyle(fontSize: 16, color: Colors.grey))); }
+
   Widget _buildShimmer() {
     return Shimmer.fromColors(
-      baseColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850]! : Colors.grey[300]!,
-      highlightColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[100]!,
+      baseColor: Theme.of(context).colorScheme.surface,
+      highlightColor: Theme.of(context).scaffoldBackgroundColor,
       child: ListView.builder(
-        itemCount: 5, // Show 5 shimmer items
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        itemCount: 5,
         itemBuilder: (context, index) {
           return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            clipBehavior: Clip.antiAlias,
+            elevation: 0,
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  height: 180,
-                  width: double.infinity,
-                  color: Colors.white, // Background color for shimmer
-                ),
+                Container(height: 180, width: double.infinity, color: Colors.black),
                 Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(height: 20, width: double.infinity, color: Colors.white),
+                      Container(height: 20, width: double.infinity, color: Colors.black),
                       const SizedBox(height: 8),
-                      Container(height: 14, width: 150, color: Colors.white),
+                      Container(height: 14, width: 150, color: Colors.black),
                     ],
                   ),
                 ),
@@ -159,7 +205,6 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
   }
 }
 
-// ArticleListItem widget remains unchanged
 class ArticleListItem extends StatelessWidget {
   final Article article;
   final VoidCallback onTap;
@@ -172,11 +217,16 @@ class ArticleListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        clipBehavior: Clip.antiAlias,
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 2,
+      // --- FIXED: Replaced withOpacity with withAlpha ---
+      shadowColor: theme.shadowColor.withAlpha((255 * 0.2).round()),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: onTap,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -186,29 +236,79 @@ class ArticleListItem extends StatelessWidget {
               width: double.infinity,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) =>
-                  const SizedBox(height: 180, child: Icon(Icons.image_not_supported)),
+                  Container(height: 180, color: theme.colorScheme.surface, child: const Icon(Icons.image_not_supported, size: 50)),
             ),
             Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     article.title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    style: GoogleFonts.exo2(fontSize: 18, fontWeight: FontWeight.bold),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'By ${article.author} • ${article.publishedDate}',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: GoogleFonts.exo2(fontSize: 12, color: theme.textTheme.bodySmall?.color),
                   ),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class ListItemAnimation extends StatefulWidget {
+  final int index;
+  final Widget child;
+  const ListItemAnimation({super.key, required this.index, required this.child});
+
+  @override
+  State<ListItemAnimation> createState() => _ListItemAnimationState();
+}
+
+class _ListItemAnimationState extends State<ListItemAnimation> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    final delay = Duration(milliseconds: widget.index * 75);
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    Future.delayed(delay, () {
+      if(mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: widget.child,
       ),
     );
   }

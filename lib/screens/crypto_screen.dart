@@ -23,12 +23,12 @@ class _CryptoScreenState extends State<CryptoScreen> {
   String? _errorMessage;
   List<CryptoCurrency> _cryptoList = [];
 
-  // --- MOCK DATA FOR ARTICLES (can be moved to a service later) ---
+  // --- MODIFIED: Updated the article categories list ---
   final List<ArticleCategory> _articleCategories = [
-    ArticleCategory(name: 'Finance', imageUrl: 'assets/images/finance.jpg'),
-    ArticleCategory(name: 'Crypto', imageUrl: 'assets/images/crypto.jpg'),
+    ArticleCategory(name: 'Finance & Crypto', imageUrl: 'assets/images/finance_crypto.jpg'),
     ArticleCategory(name: 'Entertainment', imageUrl: 'assets/images/entertainment.jpg'),
     ArticleCategory(name: 'Sports', imageUrl: 'assets/images/sports.jpg'),
+    ArticleCategory(name: 'World', imageUrl: 'assets/images/world.jpg'),
   ];
 
   @override
@@ -64,7 +64,6 @@ class _CryptoScreenState extends State<CryptoScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          // --- MODIFIED: Use the actual error from the exception ---
           _errorMessage = e.toString();
         });
       }
@@ -149,7 +148,7 @@ class _CryptoScreenState extends State<CryptoScreen> {
               crossAxisCount: 2,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
-              childAspectRatio: 1.2,
+              childAspectRatio: 0.8,
             ),
             itemBuilder: (context, index) {
               return ArticleCategoryCard(category: _articleCategories[index]);
@@ -291,7 +290,20 @@ class ArticleCategoryCard extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ArticleListScreen(categoryName: category.name))),
+        // --- MODIFIED: This now uses PageRouteBuilder for a smooth fade transition ---
+        onTap: () {
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  ArticleListScreen(categoryName: category.name),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              transitionDuration: const Duration(milliseconds: 300),
+            ),
+          );
+        },
         child: Stack(
           fit: StackFit.expand,
           children: [
