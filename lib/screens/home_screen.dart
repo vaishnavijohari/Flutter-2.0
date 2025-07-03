@@ -24,12 +24,9 @@ class _HomeScreenState extends State<HomeScreen> {
   late final PageController _pageController;
   Timer? _carouselTimer;
 
-  // REMOVED: The _currentPage variable is no longer needed.
-
   @override
   void initState() {
     super.initState();
-    // Initialize with a large number for "infinite" scrolling feel
     _pageController = PageController(viewportFraction: 0.85, initialPage: 1000);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchHomePageData();
@@ -43,7 +40,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // MODIFIED: Simplified timer logic
   void _startCarouselTimer() {
     _carouselTimer?.cancel();
     if (_homePageData?.newlyAddedStories.isNotEmpty ?? false) {
@@ -82,11 +78,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // --- MODIFIED: This function now implements the smooth fade transition ---
   void _navigateToDetail(Story story) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => StoryDetailScreen(story: story),
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => StoryDetailScreen(story: story),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 400),
       ),
     );
   }
@@ -141,13 +142,10 @@ class _HomeScreenState extends State<HomeScreen> {
       height: 180,
       child: PageView.builder(
         controller: _pageController,
-        // REMOVED: onPageChanged is no longer needed
-        // REMOVED: itemCount to allow for infinite looping
         itemBuilder: (context, index) {
-          // NEW: Use modulo operator for infinite looping
           final story = stories[index % stories.length];
           return GestureDetector(
-            onTap: () => _navigateToDetail(story),
+            onTap: () => _navigateToDetail(story), // This now uses the smooth transition
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
@@ -222,10 +220,11 @@ class _HomeScreenState extends State<HomeScreen> {
       itemCount: stories.length,
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemBuilder: (context, index) {
+        final story = stories[index];
         return TrendingListItem(
-          story: stories[index],
+          story: story,
           rank: index + 1,
-          onTap: () => _navigateToDetail(Story(id: stories[index].id, title: stories[index].title, imageUrl: stories[index].coverImageUrl)),
+          onTap: () => _navigateToDetail(Story(id: story.id, title: story.title, imageUrl: story.coverImageUrl)), // This now uses the smooth transition
         );
       },
     );
@@ -242,9 +241,18 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildSectionTitle('Latest Updates'),
               TextButton(
                 onPressed: () {
-                   Navigator.push(context, MaterialPageRoute(builder: (_) => const AllUpdatesScreen()));
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) => const AllUpdatesScreen(),
+                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                        return FadeTransition(opacity: animation, child: child);
+                      },
+                      transitionDuration: const Duration(milliseconds: 300),
+                    ),
+                  );
                 },
-                child: Text('See All', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                child: Text('See All>>', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
               ),
             ],
           ),
@@ -255,9 +263,10 @@ class _HomeScreenState extends State<HomeScreen> {
           physics: const NeverScrollableScrollPhysics(),
           padding: EdgeInsets.zero,
           itemBuilder: (context, index) {
+            final update = updates[index];
             return LatestUpdateListItem(
-              update: updates[index],
-              onTap: () => _navigateToDetail(Story(id: updates[index].id, title: updates[index].title, imageUrl: updates[index].coverImageUrl)),
+              update: update,
+              onTap: () => _navigateToDetail(Story(id: update.id, title: update.title, imageUrl: update.coverImageUrl)), // This now uses the smooth transition
             );
           },
         ),

@@ -12,7 +12,8 @@ import 'screens/main_screen.dart';
 import 'providers/theme_provider.dart';
 import 'providers/reader_settings_provider.dart';
 import 'services/story_repository.dart';
-import 'core/theme/app_theme.dart'; // <-- ADDED: Import the new theme file
+import 'services/crypto_api_service.dart'; // <-- ADDED
+import 'core/theme/app_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +24,8 @@ void main() {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => ReaderSettingsProvider()),
         Provider(create: (_) => StoryRepository()),
+        // --- ADDED: Make CryptoApiService available to the app ---
+        Provider(create: (_) => CryptoApiService()),
       ],
       child: const MyApp(),
     ),

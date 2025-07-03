@@ -13,7 +13,7 @@ dependencies:
   
   # Icons and UI Packages
   cupertino_icons: ^1.0.2
-  carousel_slider: ^4.2.1
+  carousel_slider: ^5.1.1
   google_fonts: ^6.1.0
   font_awesome_flutter: ^10.7.0 # Updated version
   shimmer: ^3.0.0

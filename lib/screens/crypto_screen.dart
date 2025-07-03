@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 
 import '../services/crypto_api_service.dart';
 import 'article_list_screen.dart';
-import '../models.dart'; // ADDED: The single source of truth for our models.
-
-// DELETED: The local definitions for CryptoCurrency, ArticleCategory, and TimeRange have been removed from this file.
+import '../models.dart';
 
 class CryptoScreen extends StatefulWidget {
   const CryptoScreen({super.key});
@@ -17,17 +18,12 @@ class CryptoScreen extends StatefulWidget {
 }
 
 class _CryptoScreenState extends State<CryptoScreen> {
-  // This map now correctly uses the CryptoCurrency model from models.dart
-  Map<String, CryptoCurrency> _cryptoData = {};
-  late CryptoCurrency _selectedCrypto;
-  TimeRange _selectedTimeRange = TimeRange.sixMonths;
-
-  bool _isPageLoading = true;
-  bool _isChartLoading = true;
+  // --- STATE MANAGEMENT ---
+  bool _isLoading = true;
   String? _errorMessage;
+  List<CryptoCurrency> _cryptoList = [];
 
-  final CryptoApiService _apiService = CryptoApiService();
-
+  // --- MOCK DATA FOR ARTICLES (can be moved to a service later) ---
   final List<ArticleCategory> _articleCategories = [
     ArticleCategory(name: 'Finance', imageUrl: 'assets/images/finance.jpg'),
     ArticleCategory(name: 'Crypto', imageUrl: 'assets/images/crypto.jpg'),
@@ -41,365 +37,248 @@ class _CryptoScreenState extends State<CryptoScreen> {
     _fetchLivePrices();
   }
 
+  // --- DATA FETCHING ---
   Future<void> _fetchLivePrices() async {
+    if (_cryptoList.isEmpty) {
+      setState(() => _isLoading = true);
+    }
+    
     try {
-      final prices = await _apiService.getLiveCryptoPrices();
-      if (mounted) {
-        setState(() {
-          _cryptoData = {for (var crypto in prices) crypto.symbol: crypto};
-          // Set a default selected crypto, ensuring it exists.
-          if (_cryptoData.containsKey('BTC')) {
-            _selectedCrypto = _cryptoData['BTC']!;
-             _fetchChartDataForSelectedCrypto();
-          }
-          _isPageLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = e.toString();
-          _isPageLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _fetchChartDataForSelectedCrypto() async {
-    if (_selectedCrypto.priceData.containsKey(_selectedTimeRange)) {
-       setState(() => _isChartLoading = false);
-       return;
-    }
-
-    if (mounted) setState(() => _isChartLoading = true);
-
-    try {
-      // This call now works because both the argument and parameter are the same TimeRange type.
-      final chartData = await _apiService.getHistoricalChartData(_selectedCrypto.id, _selectedTimeRange);
-      if (mounted) {
-        setState(() {
-          _selectedCrypto.priceData[_selectedTimeRange] = chartData;
-          _isChartLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isChartLoading = false);
-    }
-  }
-
-  void _onCryptoChanged(String? symbol) {
-    if (symbol != null && _cryptoData.containsKey(symbol)) {
-      setState(() {
-        _selectedCrypto = _cryptoData[symbol]!;
+      final apiService = context.read<CryptoApiService>();
+      final prices = await apiService.getLiveCryptoPrices();
+      
+      prices.sort((a, b) {
+        if (a.symbol == 'BTC') return -1;
+        if (b.symbol == 'BTC') return 1;
+        return a.name.compareTo(b.name);
       });
-      _fetchChartDataForSelectedCrypto();
-    }
-  }
 
-  void _onTimeRangeChanged(int index) {
-    if (TimeRange.values[index] != _selectedTimeRange) {
+      if (mounted) {
         setState(() {
-          _selectedTimeRange = TimeRange.values[index];
+          _cryptoList = prices;
+          _isLoading = false;
+          _errorMessage = null;
         });
-        _fetchChartDataForSelectedCrypto();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          // --- MODIFIED: Use the actual error from the exception ---
+          _errorMessage = e.toString();
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: _isPageLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)))
-              : _buildContent(),
-    );
-  }
-
-  // --- No changes needed below this line, all widgets remain the same ---
-
-  Widget _buildContent() {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 24),
-            _buildCryptoSelector(),
-            const SizedBox(height: 16),
-            _buildPriceInfo(),
-            const SizedBox(height: 24),
-            _buildTimeRangeSelector(),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 250,
-              child: _isChartLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : PriceChart(
-                      key: ValueKey('${_selectedCrypto.symbol}_$_selectedTimeRange'),
-                      crypto: _selectedCrypto,
-                      timeRange: _selectedTimeRange,
-                    ),
-            ),
-            const SizedBox(height: 32),
-            _buildArticleSection(),
-          ],
-        ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: RefreshIndicator(
+        onRefresh: _fetchLivePrices,
+        color: Theme.of(context).colorScheme.primary,
+        backgroundColor: Theme.of(context).cardColor,
+        child: _buildBody(),
       ),
     );
   }
-  
-  Widget _buildHeader() {
-    return const Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        FaIcon(FontAwesomeIcons.bitcoin, color: Colors.amber, size: 32),
-        SizedBox(width: 12),
-        Text(
-          'Finance',
-          style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+
+  Widget _buildBody() {
+    if (_isLoading) return _buildLoadingShimmer();
+    if (_errorMessage != null) return _buildErrorState();
+    
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          title: Text('Finance', style: GoogleFonts.orbitron(fontSize: 22, fontWeight: FontWeight.bold)),
+          centerTitle: true,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          elevation: 0,
+          pinned: true,
+        ),
+        SliverToBoxAdapter(
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
+              _buildCryptoCarousel(),
+              const SizedBox(height: 32),
+              _buildArticleSection(),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildCryptoSelector() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.grey[850],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: _selectedCrypto.symbol,
-          isExpanded: true,
-          dropdownColor: Colors.grey[850],
-          icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-          style: const TextStyle(color: Colors.white, fontSize: 18),
-          items: _cryptoData.values.map((crypto) {
-            return DropdownMenuItem(
-              value: crypto.symbol,
-              child: Text('${crypto.name} (${crypto.symbol})'),
-            );
-          }).toList(),
-          onChanged: _onCryptoChanged,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPriceInfo() {
-    final bool isPositive = _selectedCrypto.change24h >= 0;
-    final Color changeColor = isPositive ? Colors.greenAccent : Colors.redAccent;
-    final priceFormat = NumberFormat.currency(
-      locale: 'en_US',
-      symbol: '\$',
-      decimalDigits: _selectedCrypto.price > 1 ? 2 : 6,
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          priceFormat.format(_selectedCrypto.price),
-          style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Icon(isPositive ? Icons.arrow_upward : Icons.arrow_downward, color: changeColor, size: 16),
-            const SizedBox(width: 4),
-            Text(
-              '${_selectedCrypto.change24h.toStringAsFixed(2)}% (24h)',
-              style: TextStyle(color: changeColor, fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimeRangeSelector() {
-    return Center(
-      child: ToggleButtons(
-        isSelected: TimeRange.values.map((e) => e == _selectedTimeRange).toList(),
-        onPressed: _onTimeRangeChanged,
-        borderRadius: BorderRadius.circular(8),
-        selectedColor: Colors.black,
-        color: Colors.white,
-        fillColor: Colors.cyanAccent,
-        borderColor: Colors.grey[700],
-        selectedBorderColor: Colors.cyanAccent,
-        children: const [
-          Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('1D')),
-          Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('1W')),
-          Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('1M')),
-          Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('6M')),
-        ],
+  Widget _buildCryptoCarousel() {
+    return CarouselSlider.builder(
+      itemCount: _cryptoList.length,
+      itemBuilder: (context, index, realIndex) {
+        return CryptoCard(crypto: _cryptoList[index]);
+      },
+      options: CarouselOptions(
+        height: 180,
+        viewportFraction: 0.8,
+        enlargeCenterPage: true,
+        enlargeStrategy: CenterPageEnlargeStrategy.scale,
+        autoPlay: true,
+        autoPlayInterval: const Duration(seconds: 5),
+        autoPlayAnimationDuration: const Duration(milliseconds: 800),
       ),
     );
   }
 
   Widget _buildArticleSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Browse Articles',
-          style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _articleCategories.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.0,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Browse Articles',
+            style: GoogleFonts.orbitron(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          itemBuilder: (context, index) {
-            return ArticleCategoryCard(category: _articleCategories[index]);
-          },
-        ),
-      ],
+          const SizedBox(height: 16),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _articleCategories.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.2,
+            ),
+            itemBuilder: (context, index) {
+              return ArticleCategoryCard(category: _articleCategories[index]);
+            },
+          ),
+        ],
+      ),
     );
   }
-}
+  
+  Widget _buildLoadingShimmer() {
+    final theme = Theme.of(context);
+    final shimmerColor = theme.brightness == Brightness.dark ? Colors.grey[900]! : Colors.grey[200]!;
+    final shimmerHighlight = theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[100]!;
 
-class PriceChart extends StatelessWidget {
-  final CryptoCurrency crypto;
-  final TimeRange timeRange;
-
-  const PriceChart({
-    super.key,
-    required this.crypto,
-    required this.timeRange,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final priceData = crypto.priceData[timeRange] ?? [];
-    if (priceData.isEmpty) {
-      return const Center(child: Text("Chart data not available.", style: TextStyle(color: Colors.white70)));
-    }
-
-    final tooltipPriceFormat = NumberFormat.currency(
-      locale: 'en_US',
-      symbol: '\$',
-      decimalDigits: crypto.price > 1 ? 2 : 6,
-    );
-
-    return SizedBox(
-      height: 250,
-      child: LineChart(
-        LineChartData(
-          lineTouchData: LineTouchData(
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (spot) => Colors.blueGrey.withAlpha(200),
-              getTooltipItems: (touchedSpots) {
-                return touchedSpots.map((spot) {
-                  return LineTooltipItem(
-                    '${tooltipPriceFormat.format(spot.y)}\n',
-                    const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  );
-                }).toList();
-              },
-            ),
+    return Shimmer.fromColors(
+      baseColor: shimmerColor,
+      highlightColor: shimmerHighlight,
+      child: Center(
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.8,
+          height: 180,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(20),
           ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: true,
-            getDrawingHorizontalLine: (value) => const FlLine(color: Colors.white10, strokeWidth: 1),
-            getDrawingVerticalLine: (value) => const FlLine(color: Colors.white10, strokeWidth: 1),
-          ),
-          titlesData: FlTitlesData(
-            show: true,
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 50,
-                getTitlesWidget: (value, meta) {
-                  final format = NumberFormat.compactSimpleCurrency(locale: 'en_US');
-                  return Text(
-                    format.format(value),
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                    textAlign: TextAlign.left,
-                  );
-                },
-              ),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                interval: _getBottomTitleInterval(priceData),
-                getTitlesWidget: (value, meta) {
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    space: 8.0,
-                    child: Text(
-                      _getBottomTitleForValue(value.toInt(), priceData, timeRange),
-                      style: const TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
-                  );
-                },
-              ),
-            ),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          ),
-          borderData: FlBorderData(
-            show: true,
-            border: Border.all(color: Colors.white10, width: 1),
-          ),
-          lineBarsData: [
-            LineChartBarData(
-              spots: priceData,
-              isCurved: true,
-              color: Colors.cyanAccent,
-              barWidth: 3,
-              isStrokeCapRound: true,
-              dotData: const FlDotData(show: false),
-              belowBarData: BarAreaData(
-                show: true,
-                gradient: LinearGradient(
-                  colors: [Colors.cyanAccent.withAlpha(77), Colors.transparent],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
   }
 
-  double _getBottomTitleInterval(List<FlSpot> spots) {
-    if (spots.isEmpty) return 1;
-    return spots.length / 4;
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.cloud_off, color: Colors.grey, size: 60),
+            const SizedBox(height: 20),
+            Text(_errorMessage!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 20),
+            ElevatedButton(onPressed: _fetchLivePrices, child: const Text('Try Again')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class CryptoCard extends StatelessWidget {
+  final CryptoCurrency crypto;
+  const CryptoCard({super.key, required this.crypto});
+
+  IconData _getIconForSymbol(String symbol) {
+    switch (symbol) {
+      case 'BTC': return FontAwesomeIcons.bitcoin;
+      case 'ETH': return FontAwesomeIcons.ethereum;
+      case 'DOGE': return FontAwesomeIcons.dog;
+      default: return FontAwesomeIcons.dollarSign;
+    }
   }
 
-  String _getBottomTitleForValue(int index, List<FlSpot> spots, TimeRange timeRange) {
-    if (index < 0 || index >= spots.length) return '';
-    
-    // This logic needs to be based on how the API provides the data.
-    // Assuming 'x' is an index for simplicity until API gives real timestamps.
-    switch (timeRange) {
-      case TimeRange.oneDay:
-        return 'Day ${index + 1}';
-      case TimeRange.oneWeek:
-        return 'Week ${index + 1}';
-      case TimeRange.oneMonth:
-        return 'Month ${index + 1}';
-      case TimeRange.sixMonths:
-        return 'M ${index + 1}';
-    }
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isPositive = crypto.change24h >= 0;
+    final changeColor = isPositive ? Colors.greenAccent.shade400 : Colors.redAccent.shade400;
+
+    final priceFormat = NumberFormat.currency(
+      locale: 'en_US',
+      symbol: '\$',
+      decimalDigits: crypto.price > 1 ? 2 : 6,
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.surface,
+            theme.colorScheme.surface.withAlpha(200),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: theme.colorScheme.surface.withAlpha(150)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FaIcon(_getIconForSymbol(crypto.symbol), color: theme.colorScheme.primary, size: 28),
+              const SizedBox(width: 12),
+              Text(crypto.name, style: GoogleFonts.exo2(fontSize: 22, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            priceFormat.format(crypto.price),
+            style: GoogleFonts.orbitron(fontSize: 28, fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: changeColor.withAlpha((255 * 0.15).round()),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(isPositive ? Icons.arrow_upward : Icons.arrow_downward, color: changeColor, size: 14),
+                const SizedBox(width: 4),
+                Text(
+                  '${crypto.change24h.toStringAsFixed(2)}% (24h)',
+                  style: GoogleFonts.exo2(color: changeColor, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -412,14 +291,7 @@ class ArticleCategoryCard extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ArticleListScreen(categoryName: category.name),
-            ),
-          );
-        },
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ArticleListScreen(categoryName: category.name))),
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -427,16 +299,17 @@ class ArticleCategoryCard extends StatelessWidget {
               category.imageUrl,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(
-                color: Colors.grey[800],
-                child: const Icon(Icons.image_not_supported, color: Colors.white30),
+                color: Theme.of(context).colorScheme.surface,
+                child: const Icon(Icons.image_not_supported, color: Colors.grey),
               ),
             ),
-            const DecoratedBox(
+            Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.transparent, Color.fromRGBO(0, 0, 0, 0.8)],
+                  colors: [Colors.transparent, Colors.black.withAlpha((255 * 0.8).round())],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
+                  stops: const [0.4, 1.0]
                 ),
               ),
             ),
@@ -446,11 +319,7 @@ class ArticleCategoryCard extends StatelessWidget {
               right: 12,
               child: Text(
                 category.name,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: GoogleFonts.exo2(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
           ],

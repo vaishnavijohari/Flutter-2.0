@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -64,11 +65,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final newUsernameController = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    final theme = Theme.of(context);
 
     final bool? wasUsernameChanged = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Change Username'),
+        backgroundColor: theme.cardColor,
+        title: Text('Change Username', style: GoogleFonts.exo2(fontWeight: FontWeight.bold)),
         content: Form(
           key: formKey,
           child: TextFormField(
@@ -99,7 +102,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    // --- FIX: Perform the async action first, then guard the context use. ---
     if (wasUsernameChanged == true) {
       await _loadProfileData();
       if (mounted) {
@@ -110,11 +112,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // --- NEW: Dialog to confirm user logout ---
+  Future<void> _showLogoutDialog() async {
+    final theme = Theme.of(context);
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: theme.cardColor,
+        title: Text('Log Out', style: GoogleFonts.exo2(fontWeight: FontWeight.bold)),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Log Out'),
+          ),
+        ],
+      ),
+    );
+
+    // If the user confirmed, proceed with the actual logout
+    if (confirmed == true) {
+      await _logout();
+    }
+  }
+
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
 
-    // --- FIX: Guard the context use with a mounted check after the await. ---
     if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -124,15 +154,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _showDeleteAccountDialog() async {
+    final theme = Theme.of(context);
      final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Account'),
-        content: const Text('Are you sure you want to delete your account? This action is irreversible and all your data will be lost.'),
+        backgroundColor: theme.cardColor,
+        title: Text('Delete Account', style: GoogleFonts.exo2(fontWeight: FontWeight.bold)),
+        content: const Text('Are you sure you want to delete your account? This action is irreversible.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error),
             onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text('Delete'),
           ),
@@ -140,7 +172,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    // --- FIX: Guard the async call with the mounted check. ---
     if (confirmed == true && mounted) {
       await _logout();
     }
@@ -152,6 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isDarkMode = themeProvider.themeMode == ThemeMode.dark;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -162,7 +194,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _buildSectionTitle('Settings'),
                 _buildThemeToggle(isDarkMode, themeProvider),
                 _buildListTile(
-                  icon: Icons.bookmark_border,
+                  icon: Icons.bookmark_border_outlined,
                   title: 'My Reading List',
                   onTap: () {
                     Navigator.push(
@@ -173,25 +205,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const Divider(),
                 _buildSectionTitle('Information'),
-                _buildListTile(icon: Icons.notifications_none, title: 'Notices', onTap: () {}),
+                _buildListTile(icon: Icons.notifications_none_outlined, title: 'Notices', onTap: () {}),
                 _buildListTile(icon: Icons.shield_outlined, title: 'Privacy Policy', onTap: () {}),
                 _buildListTile(icon: Icons.description_outlined, title: 'Disclaimer', onTap: () {}),
-                const ListTile(
-                  leading: Icon(Icons.info_outline),
-                  title: Text('Version'),
-                  trailing: Text('1.0.0'),
+                ListTile(
+                  leading: const Icon(Icons.info_outline),
+                  title: Text('Version', style: GoogleFonts.exo2()),
+                  trailing: const Text('1.0.0'),
                 ),
                 const Divider(),
                 _buildListTile(
                   icon: Icons.logout,
                   title: 'Log Out',
-                  color: Colors.orange,
-                  onTap: _logout,
+                  color: Theme.of(context).colorScheme.primary,
+                  // MODIFIED: Calls the confirmation dialog instead of logging out directly
+                  onTap: _showLogoutDialog,
                 ),
                 _buildListTile(
                   icon: Icons.delete_forever_outlined,
                   title: 'Delete Account',
-                  color: Colors.red,
+                  color: Theme.of(context).colorScheme.error,
                   onTap: _showDeleteAccountDialog,
                 ),
               ],
@@ -200,50 +233,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return InkWell(
-      onTap: _showChangeUsernameDialog,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 20.0),
-        child: Row(
-          children: [
-            const CircleAvatar(
-              radius: 30,
-              child: Icon(Icons.person, size: 30),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Hi, $_username 👋',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const Text(
-                    'Tap to change your username',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: _showChangeUsernameDialog,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: theme.colorScheme.primaryContainer,
+                child: Text(
+                  _username.isNotEmpty ? _username[0].toUpperCase() : 'R',
+                  style: GoogleFonts.orbitron(fontSize: 24, color: theme.colorScheme.onPrimaryContainer),
+                ),
               ),
-            ),
-            const Icon(Icons.edit_outlined, color: Colors.grey),
-          ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hi, $_username 👋',
+                      style: GoogleFonts.orbitron(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      'Tap to change your username',
+                      style: GoogleFonts.exo2(color: theme.textTheme.bodySmall?.color),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.edit_outlined, color: theme.textTheme.bodySmall?.color),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildSectionTitle(String title) {
-    final titleColor = Theme.of(context).textTheme.bodySmall?.color;
     return Padding(
-      padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
+      padding: const EdgeInsets.only(left: 16, top: 16.0, bottom: 8.0),
       child: Text(
         title.toUpperCase(),
-        style: TextStyle(
+        style: GoogleFonts.exo2(
           fontWeight: FontWeight.bold,
-          color: titleColor?.withAlpha((255 * 0.6).round()),
+          color: Theme.of(context).textTheme.bodySmall?.color,
           letterSpacing: 0.8,
         ),
       ),
@@ -251,24 +296,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildThemeToggle(bool isDarkMode, ThemeProvider themeProvider) {
+    final theme = Theme.of(context);
     return Card(
       elevation: 0,
+      color: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Theme', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+            Text('Theme', style: GoogleFonts.exo2(fontSize: 16, fontWeight: FontWeight.w500)),
             ToggleButtons(
               isSelected: [!isDarkMode, isDarkMode],
               onPressed: (index) {
                 themeProvider.toggleTheme(index == 1);
               },
               borderRadius: BorderRadius.circular(8),
+              selectedColor: theme.colorScheme.onPrimary,
+              color: theme.colorScheme.onSurface,
+              fillColor: theme.colorScheme.primary,
+              borderColor: theme.dividerColor,
+              selectedBorderColor: theme.colorScheme.primary,
               children: const [
                 Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Icon(Icons.wb_sunny_outlined)),
-                Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Icon(Icons.nightlight_round_outlined)),
+                Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Icon(Icons.nightlight_round)),
               ],
             ),
           ],
@@ -285,8 +337,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     return ListTile(
       leading: Icon(icon, color: color),
-      title: Text(title, style: TextStyle(color: color)),
-      trailing: const Icon(Icons.chevron_right),
+      title: Text(title, style: GoogleFonts.exo2(color: color, fontSize: 16, fontWeight: FontWeight.w500)),
+      trailing: Icon(Icons.chevron_right, color: Colors.grey.shade600),
       onTap: onTap,
     );
   }
