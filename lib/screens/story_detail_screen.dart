@@ -21,12 +21,11 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
   bool _isLoading = true;
   bool _isInReadingList = false;
   
-  // --- NEW: State for collapsible sections and chapter pagination ---
-  bool _isDescriptionExpanded = true;
-  bool _isChaptersExpanded = true;
+  bool _isDescriptionExpanded = false;
+  bool _isChaptersExpanded = false;
+  
   int _selectedChapterBatch = 0;
   final int _chaptersPerBatch = 100;
-
 
   @override
   void initState() {
@@ -74,7 +73,6 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
     }
   }
 
-  // --- NEW: Helper to get the chapters for the selected page/batch ---
   List<Chapter> _getPaginatedChapters() {
     if (_storyDetail == null) return [];
     final chapters = _storyDetail!.chapters;
@@ -105,7 +103,6 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                         _buildActionButtons(),
                         const SizedBox(height: 16),
                         const Divider(),
-                        // --- MODIFIED: Using new expandable section for description ---
                         _buildExpandableSectionHeader(
                           title: 'Description',
                           isExpanded: _isDescriptionExpanded,
@@ -113,7 +110,6 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                         ),
                         _buildAnimatedSection(_isDescriptionExpanded, _buildDescription()),
                         const Divider(),
-                         // --- MODIFIED: Using new expandable section for chapters ---
                         _buildExpandableSectionHeader(
                           title: 'Chapters (${_storyDetail?.chapters.length ?? 0})',
                           isExpanded: _isChaptersExpanded,
@@ -124,7 +120,6 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                     ),
                   ),
                 ),
-                // Show chapter list only if expanded
                 if (_isChaptersExpanded) _buildChapterList(),
               ],
             ),
@@ -132,9 +127,9 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
   }
   
   SliverAppBar _buildSliverAppBar() {
-    // ... (This widget is unchanged)
     return SliverAppBar(
-      expandedHeight: 300.0, pinned: true,
+      expandedHeight: 300.0,
+      pinned: true,
       backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
       flexibleSpace: FlexibleSpaceBar(
@@ -143,11 +138,16 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(widget.story.imageUrl, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported)),
+            Image.network(
+              widget.story.imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported),
+            ),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                   colors: [Colors.transparent, Colors.black.withAlpha((255 * 0.8).round())],
                   stops: const [0.5, 1.0],
                 ),
@@ -159,18 +159,14 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
     );
   }
 
-  // --- NEW: A reusable animated container for collapsible sections ---
   Widget _buildAnimatedSection(bool isExpanded, Widget child) {
     return AnimatedSize(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      child: Container(
-        child: isExpanded ? child : null,
-      ),
+      child: isExpanded ? child : const SizedBox(width: double.infinity),
     );
   }
 
-  // --- NEW: A reusable header for the new expandable sections ---
   Widget _buildExpandableSectionHeader({
     required String title,
     required bool isExpanded,
@@ -198,10 +194,9 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
     );
   }
 
-  // --- NEW: Widget for chapter pagination buttons ---
   Widget _buildChapterPagination() {
     if (_storyDetail == null || _storyDetail!.chapters.length <= _chaptersPerBatch) {
-      return const SizedBox.shrink(); // Don't show pagination if not needed
+      return const SizedBox.shrink();
     }
 
     final totalBatches = (_storyDetail!.chapters.length / _chaptersPerBatch).ceil();
@@ -244,7 +239,6 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
               ListTile(
                 title: Text('Chapter ${chapter.chapterNumber}: ${chapter.title}', style: GoogleFonts.exo2()),
                 onTap: () {
-                  // Find the true index in the original list to pass to the reader screen
                   final trueIndex = _storyDetail!.chapters.indexOf(chapter);
                   _navigateToChapter(trueIndex);
                 },
@@ -259,8 +253,106 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
     );
   }
   
-  // These widgets are unchanged but included for completeness.
-  Widget _buildGenreTags() { return Wrap(spacing: 8.0, runSpacing: 8.0, children: _storyDetail!.genres.map((genre) => Chip(label: Text(genre, style: GoogleFonts.exo2()), backgroundColor: Theme.of(context).colorScheme.surface, side: BorderSide(color: Theme.of(context).dividerColor))).toList()); }
-  Widget _buildActionButtons() { final theme = Theme.of(context); return Row(children: [Expanded(child: ElevatedButton.icon(onPressed: _toggleReadingList, icon: Icon(_isInReadingList ? Icons.check_circle : Icons.add_circle_outline, size: 20), label: Text(_isInReadingList ? 'On Your List' : 'Add to List', style: GoogleFonts.exo2(fontWeight: FontWeight.bold)), style: ElevatedButton.styleFrom(backgroundColor: _isInReadingList ? theme.colorScheme.primaryContainer : theme.colorScheme.primary, foregroundColor: _isInReadingList ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onPrimary, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))))), const SizedBox(width: 16), Expanded(child: ElevatedButton.icon(onPressed: () => _navigateToChapter(0), icon: const Icon(Icons.menu_book, size: 20), label: Text('Read Now', style: GoogleFonts.exo2(fontWeight: FontWeight.bold)), style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)))))]); }
-  Widget _buildLoadingShimmer() { final theme = Theme.of(context); final shimmerColor = theme.brightness == Brightness.dark ? Colors.grey[900]! : Colors.grey[200]!; final shimmerHighlight = theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[100]!; return Shimmer.fromColors(baseColor: shimmerColor, highlightColor: shimmerHighlight, child: SingleChildScrollView(physics: const NeverScrollableScrollPhysics(), child: Column(children: [Container(height: 300, color: Colors.black), Padding(padding: const EdgeInsets.all(16.0), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [Container(height: 30, width: 80, color: Colors.black), const SizedBox(width: 8), Container(height: 30, width: 100, color: Colors.black)]), const SizedBox(height: 24), Row(children: [Expanded(child: Container(height: 48, color: Colors.black)), const SizedBox(width: 16), Expanded(child: Container(height: 48, color: Colors.black))]), const SizedBox(height: 16), const Divider(), Container(height: 20, width: 150, color: Colors.black), const SizedBox(height: 8), Container(height: 14, color: Colors.black), const SizedBox(height: 6), Container(height: 14, color: Colors.black)]))]))); }
+  // --- REFORMATTED: Cleaner and more readable ---
+  Widget _buildGenreTags() { 
+    return Wrap(
+      spacing: 8.0, 
+      runSpacing: 8.0, 
+      children: _storyDetail!.genres.map((genre) => Chip(
+        label: Text(genre, style: GoogleFonts.exo2()),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        side: BorderSide(color: Theme.of(context).dividerColor),
+      )).toList(),
+    );
+  }
+
+  // --- REFORMATTED: Cleaner and more readable ---
+  Widget _buildActionButtons() { 
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: _toggleReadingList,
+            icon: Icon(_isInReadingList ? Icons.check_circle : Icons.add_circle_outline, size: 20),
+            label: Text(
+              _isInReadingList ? 'On Your List' : 'Add to List',
+              style: GoogleFonts.exo2(fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _isInReadingList ? theme.colorScheme.primaryContainer : theme.colorScheme.primary,
+              foregroundColor: _isInReadingList ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () => _navigateToChapter(0),
+            icon: const Icon(Icons.menu_book, size: 20),
+            label: Text(
+              'Read Now',
+              style: GoogleFonts.exo2(fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // --- REFORMATTED: Cleaner and more readable ---
+  Widget _buildLoadingShimmer() { 
+    final theme = Theme.of(context);
+    final shimmerColor = theme.brightness == Brightness.dark ? Colors.grey[900]! : Colors.grey[200]!;
+    final shimmerHighlight = theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[100]!;
+    
+    return Shimmer.fromColors(
+      baseColor: shimmerColor,
+      highlightColor: shimmerHighlight,
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            Container(height: 300, color: Colors.black),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(height: 30, width: 80, color: Colors.black),
+                      const SizedBox(width: 8),
+                      Container(height: 30, width: 100, color: Colors.black),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(child: Container(height: 48, color: Colors.black)),
+                      const SizedBox(width: 16),
+                      Expanded(child: Container(height: 48, color: Colors.black)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  Container(height: 20, width: 150, color: Colors.black),
+                  const SizedBox(height: 8),
+                  Container(height: 14, color: Colors.black),
+                  const SizedBox(height: 6),
+                  Container(height: 14, color: Colors.black),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
