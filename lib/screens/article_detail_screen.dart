@@ -1,26 +1,75 @@
 import 'package:flutter/material.dart';
-// --- NEW: Import the share_plus package ---
 import 'package:share_plus/share_plus.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../models.dart';
+import '../dummy_data.dart'; // To fetch recommended articles
 
-class ArticleDetailScreen extends StatelessWidget {
+class ArticleDetailScreen extends StatefulWidget {
   final Article article;
 
   const ArticleDetailScreen({super.key, required this.article});
 
-  // --- NEW: Function to handle the share action ---
+  @override
+  State<ArticleDetailScreen> createState() => _ArticleDetailScreenState();
+}
+
+class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
+  // --- NEW: State for handling recommended articles ---
+  List<Article> _recommendedArticles = [];
+  bool _isLoadingRecommendations = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRecommendations();
+  }
+
+  // --- NEW: Fetches and sets the recommended articles ---
+  Future<void> _fetchRecommendations() async {
+    // Get all articles from the same category
+    final allArticlesInCategory = MockData.getArticlesByCategory(widget.article.category);
+    
+    // Remove the current article from the list, shuffle, and take 3
+    final recommendations = allArticlesInCategory
+        .where((a) => a.id != widget.article.id)
+        .toList()
+          ..shuffle();
+
+    if (mounted) {
+      setState(() {
+        _recommendedArticles = recommendations.take(3).toList();
+        _isLoadingRecommendations = false;
+      });
+    }
+  }
+
   void _shareArticle(BuildContext context) {
-    // In a real app, you would share a real URL to the article.
     final String textToShare =
-        'Check out this article: ${article.title}\n\nRead more at: https://yourapp.com/articles/${article.id}';
+        'Check out this article: ${widget.article.title}\n\nRead more at: https://yourapp.com/articles/${widget.article.id}';
     
     Share.share(textToShare, subject: 'An interesting article from Fabula');
   }
 
+  // --- NEW: Navigation function for smooth transitions ---
+  void _navigateToArticle(Article article) {
+     Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => ArticleDetailScreen(article: article),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -28,17 +77,36 @@ class ArticleDetailScreen extends StatelessWidget {
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
-                article.category,
-                style: const TextStyle(shadows: [Shadow(blurRadius: 8)]),
+                widget.article.category,
+                // MODIFIED: Applied consistent font
+                style: GoogleFonts.orbitron(
+                  shadows: const [Shadow(blurRadius: 8)],
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              background: Image.network(
-                article.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Center(child: Icon(Icons.image_not_supported)),
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    widget.article.imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Center(child: Icon(Icons.image_not_supported)),
+                  ),
+                  // NEW: Gradient for better title legibility
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.transparent, Colors.black.withAlpha(150)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: const [0.6, 1.0],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            // --- NEW: Add actions to the SliverAppBar ---
             actions: [
               IconButton(
                 icon: const Icon(Icons.share),
@@ -53,25 +121,126 @@ class ArticleDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // MODIFIED: Applied consistent fonts and theme colors
                   Text(
-                    article.title,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                    widget.article.title,
+                    style: GoogleFonts.orbitron(
+                      textStyle: theme.textTheme.headlineSmall,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'By ${article.author} • ${article.publishedDate}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                    'By ${widget.article.author} • ${widget.article.publishedDate}',
+                    style: GoogleFonts.exo2(
+                      textStyle: theme.textTheme.bodyMedium,
+                      color: theme.textTheme.bodySmall?.color,
+                    ),
                   ),
                   const Divider(height: 32),
                   Text(
-                    article.content,
-                    style: const TextStyle(fontSize: 18, height: 1.6),
+                    widget.article.content,
+                    style: GoogleFonts.exo2(
+                      textStyle: theme.textTheme.bodyLarge,
+                      height: 1.6,
+                    ),
                   ),
+                  const SizedBox(height: 24),
+                  // --- NEW: "Read Also" section ---
+                  _buildReadAlsoSection(),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // --- NEW: Widget to build the "Read Also" section ---
+  Widget _buildReadAlsoSection() {
+    if (_isLoadingRecommendations || _recommendedArticles.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(height: 32),
+        Text(
+          'Read Also',
+          style: GoogleFonts.orbitron(
+            textStyle: Theme.of(context).textTheme.titleLarge,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        ..._recommendedArticles.map((article) => _RecommendedArticleCard(
+          article: article,
+          onTap: () => _navigateToArticle(article),
+        )),
+      ],
+    );
+  }
+}
+
+// --- NEW: A card widget for recommended articles ---
+class _RecommendedArticleCard extends StatelessWidget {
+  final Article article;
+  final VoidCallback onTap;
+
+  const _RecommendedArticleCard({required this.article, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: theme.colorScheme.surface,
+      child: InkWell(
+        onTap: onTap,
+        child: Row(
+          children: [
+            Image.network(
+              article.imageUrl,
+              width: 100,
+              height: 100,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 100,
+                height: 100,
+                color: theme.scaffoldBackgroundColor,
+                child: const Icon(Icons.image_not_supported),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      article.title,
+                      style: GoogleFonts.exo2(fontWeight: FontWeight.bold, fontSize: 15),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'By ${article.author}',
+                      style: GoogleFonts.exo2(fontSize: 12, color: theme.textTheme.bodySmall?.color),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

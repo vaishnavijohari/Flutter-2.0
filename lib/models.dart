@@ -137,3 +137,12 @@ class CryptoCurrency {
 }
 
 enum TimeRange { oneDay, oneWeek, oneMonth, sixMonths }
+
+// Add this class to your lib/models.dart file
+
+class ReadingListStory {
+  final Story story;
+  final bool isUpdated;
+
+  ReadingListStory({required this.story, required this.isUpdated});
+}
