@@ -107,9 +107,10 @@ class _ChapterContentScreenState extends State<ChapterContentScreen> with Single
       backgroundColor: Colors.transparent,
       builder: (context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.8,
-          maxChildSize: 0.9,
-          minChildSize: 0.5,
+          // --- MODIFIED: Changed the pop-up sizes ---
+          initialChildSize: 0.5, // Start at 50% of the screen height
+          maxChildSize: 0.9,     // Can be dragged up to 90%
+          minChildSize: 0.3,     // Can be dragged down to 30%
           builder: (_, controller) => _TableOfContentsSheet(
             chapters: widget.storyDetail.chapters,
             scrollController: controller,
@@ -124,7 +125,6 @@ class _ChapterContentScreenState extends State<ChapterContentScreen> with Single
   }
 
   void _showSettingsModal() {
-     // MODIFIED: Using Consumer here to properly rebuild the settings modal
      showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).cardColor,
@@ -175,11 +175,17 @@ class _ChapterContentScreenState extends State<ChapterContentScreen> with Single
                         onTap: () {
                           settings.updateTheme(theme);
                         },
-                        borderRadius: BorderRadius.circular(22),
-                        child: CircleAvatar(
-                          radius: 22,
-                          backgroundColor: backgroundColor,
-                          child: isSelected ? Icon(Icons.check, color: checkColor) : null,
+                        borderRadius: BorderRadius.circular(24),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.grey.shade400, width: 2),
+                          ),
+                          child: CircleAvatar(
+                            radius: 22,
+                            backgroundColor: backgroundColor,
+                            child: isSelected ? Icon(Icons.check, color: checkColor) : null,
+                          ),
                         ),
                       );
                     }).toList(),
@@ -195,7 +201,6 @@ class _ChapterContentScreenState extends State<ChapterContentScreen> with Single
 
   @override
   Widget build(BuildContext context) {
-    // MODIFIED: Using Consumer here for the main Scaffold to react to theme changes
     return Consumer<ReaderSettingsProvider>(
       builder: (context, settings, child) {
         return Scaffold(
