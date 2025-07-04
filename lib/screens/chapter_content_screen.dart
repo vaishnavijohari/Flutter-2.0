@@ -124,14 +124,14 @@ class _ChapterContentScreenState extends State<ChapterContentScreen> with Single
   }
 
   void _showSettingsModal() {
-     final settings = context.read<ReaderSettingsProvider>();
+     // MODIFIED: Using Consumer here to properly rebuild the settings modal
      showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, modalSetState) {
+        return Consumer<ReaderSettingsProvider>(
+          builder: (context, settings, child) {
             return Container(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -147,28 +147,6 @@ class _ChapterContentScreenState extends State<ChapterContentScreen> with Single
                     onChanged: (value) {
                       settings.updateFontSize(value);
                     },
-                  ),
-                  const Divider(),
-                  Text('Font Family', style: GoogleFonts.exo2(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  ToggleButtons(
-                    isSelected: [
-                      settings.fontFamily == ReaderFontFamily.serif,
-                      settings.fontFamily == ReaderFontFamily.sansSerif
-                    ],
-                    onPressed: (index) {
-                      final newFamily = index == 0 ? ReaderFontFamily.serif : ReaderFontFamily.sansSerif;
-                      settings.updateFontFamily(newFamily);
-                      modalSetState(() {});
-                    },
-                    borderRadius: BorderRadius.circular(8),
-                    selectedColor: Theme.of(context).colorScheme.onPrimary,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fillColor: Theme.of(context).colorScheme.primary,
-                    children: [
-                      Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text('Serif', style: GoogleFonts.merriweather())),
-                      Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text('Sans-Serif', style: GoogleFonts.roboto())),
-                    ],
                   ),
                   const Divider(),
                   Text('Theme', style: GoogleFonts.exo2(fontWeight: FontWeight.bold)),
@@ -196,7 +174,6 @@ class _ChapterContentScreenState extends State<ChapterContentScreen> with Single
                       return InkWell(
                         onTap: () {
                           settings.updateTheme(theme);
-                          modalSetState(() {});
                         },
                         borderRadius: BorderRadius.circular(22),
                         child: CircleAvatar(
@@ -218,78 +195,81 @@ class _ChapterContentScreenState extends State<ChapterContentScreen> with Single
 
   @override
   Widget build(BuildContext context) {
-    final settings = context.watch<ReaderSettingsProvider>();
-
-    return Scaffold(
-      backgroundColor: settings.backgroundColor,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: AnimatedBuilder(
-          animation: _navBarAnimationController,
-          builder: (context, child) => Transform.translate(
-            offset: Offset(0, -kToolbarHeight * (1 - _navBarAnimationController.value)),
-            child: child,
-          ),
-          child: AppBar(
-            backgroundColor: settings.backgroundColor.withAlpha(220),
-            foregroundColor: settings.textColor,
-            elevation: 0,
-            title: Text(widget.storyDetail.title, style: GoogleFonts.exo2(fontSize: 18), maxLines: 1, overflow: TextOverflow.ellipsis,),
-            centerTitle: true,
-          ),
-        ),
-      ),
-      bottomNavigationBar: AnimatedBuilder(
-        animation: _navBarAnimationController,
-        builder: (context, child) => Transform.translate(
-          offset: Offset(0, kBottomNavigationBarHeight * (1 - _navBarAnimationController.value)),
-          child: child,
-        ),
-        child: BottomAppBar(
-          color: settings.backgroundColor.withAlpha(220),
-          elevation: 4,
-          child: _buildNavigationControls(settings),
-        ),
-      ),
-      body: GestureDetector(
-        onTap: () {
-          if (_navBarAnimationController.isCompleted) {
-            _navBarAnimationController.reverse();
-          } else {
-            _navBarAnimationController.forward();
-          }
-        },
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Chapter ${_currentChapter.chapterNumber}: ${_currentChapter.title}',
-                style: GoogleFonts.merriweather(
-                  fontWeight: FontWeight.bold,
-                  fontSize: settings.fontSize + 6,
-                  color: settings.textColor,
-                ),
+    // MODIFIED: Using Consumer here for the main Scaffold to react to theme changes
+    return Consumer<ReaderSettingsProvider>(
+      builder: (context, settings, child) {
+        return Scaffold(
+          backgroundColor: settings.backgroundColor,
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(kToolbarHeight),
+            child: AnimatedBuilder(
+              animation: _navBarAnimationController,
+              builder: (context, child) => Transform.translate(
+                offset: Offset(0, -kToolbarHeight * (1 - _navBarAnimationController.value)),
+                child: child,
               ),
-              const Divider(height: 32),
-              _isContentLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : Text(
-                      _chapterContentCache[_currentChapterIndex] ?? 'Could not load content.',
-                      style: TextStyle(
-                        fontSize: settings.fontSize,
-                        height: 1.7,
-                        fontFamily: settings.font,
-                        color: settings.textColor,
-                      ),
-                      textAlign: TextAlign.justify,
-                    ),
-            ],
+              child: AppBar(
+                backgroundColor: settings.backgroundColor.withAlpha(220),
+                foregroundColor: settings.textColor,
+                elevation: 0,
+                title: Text(widget.storyDetail.title, style: GoogleFonts.exo2(fontSize: 18), maxLines: 1, overflow: TextOverflow.ellipsis,),
+                centerTitle: true,
+              ),
+            ),
           ),
-        ),
-      ),
+          bottomNavigationBar: AnimatedBuilder(
+            animation: _navBarAnimationController,
+            builder: (context, child) => Transform.translate(
+              offset: Offset(0, kBottomNavigationBarHeight * (1 - _navBarAnimationController.value)),
+              child: child,
+            ),
+            child: BottomAppBar(
+              color: settings.backgroundColor.withAlpha(220),
+              elevation: 4,
+              child: _buildNavigationControls(settings),
+            ),
+          ),
+          body: GestureDetector(
+            onTap: () {
+              if (_navBarAnimationController.isCompleted) {
+                _navBarAnimationController.reverse();
+              } else {
+                _navBarAnimationController.forward();
+              }
+            },
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Chapter ${_currentChapter.chapterNumber}: ${_currentChapter.title}',
+                    style: GoogleFonts.merriweather(
+                      fontWeight: FontWeight.bold,
+                      fontSize: settings.fontSize + 6,
+                      color: settings.textColor,
+                    ),
+                  ),
+                  const Divider(height: 32),
+                  _isContentLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : Text(
+                          _chapterContentCache[_currentChapterIndex] ?? 'Could not load content.',
+                          style: TextStyle(
+                            fontSize: settings.fontSize,
+                            height: 1.7,
+                            fontFamily: settings.font,
+                            color: settings.textColor,
+                          ),
+                          textAlign: TextAlign.justify,
+                        ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
     );
   }
 
@@ -345,7 +325,6 @@ class _TableOfContentsSheet extends StatefulWidget {
 }
 
 class _TableOfContentsSheetState extends State<_TableOfContentsSheet> {
-  // --- FIXED: Changed from 'final' to a regular variable to allow updates ---
   List<Chapter> _filteredChapters = [];
   final _searchController = TextEditingController();
 
@@ -380,12 +359,25 @@ class _TableOfContentsSheetState extends State<_TableOfContentsSheet> {
       ),
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text('Table of Contents', style: GoogleFonts.orbitron(fontSize: 20, fontWeight: FontWeight.bold)),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Text('Table of Contents', style: GoogleFonts.orbitron(fontSize: 20, fontWeight: FontWeight.bold)),
+              ),
+              Positioned(
+                right: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                  tooltip: 'Close',
+                ),
+              ),
+            ],
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
