@@ -31,6 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     String? storedUsername = prefs.getString('username');
 
+    // --- FIXED: Check for null before checking if empty ---
     if (storedUsername == null || storedUsername.isEmpty) {
       storedUsername = 'Reader${Random().nextInt(9000) + 1000}';
       await prefs.setString('username', storedUsername);
@@ -54,7 +55,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final difference = DateTime.now().difference(_lastUsernameChangeDate!);
       if (difference.inDays < 60) {
         final daysLeft = 60 - difference.inDays;
-        // Check if mounted BEFORE using context
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('You can change your username again in $daysLeft days.')),
@@ -66,7 +66,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final newUsernameController = TextEditingController();
     final formKey = GlobalKey<FormState>();
     
-    // Check if mounted BEFORE using context for the theme
     if (!mounted) return;
     final theme = Theme.of(context);
 
@@ -105,11 +104,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    // After the dialog closes (an async gap), check if the widget is still mounted
     if (wasUsernameChanged == true) {
       await _loadProfileData();
 
-      // --- FIXED: Added another mounted check after the await call ---
+      // --- FIXED: Added mounted check after the await call ---
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Username updated successfully!')),
@@ -176,7 +174,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    if (confirmed == true) {
+    if (confirmed == true && mounted) {
       await _logout();
     }
   }
