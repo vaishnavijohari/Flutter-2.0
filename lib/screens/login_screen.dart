@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'signup_screen.dart';
 import 'main_screen.dart';
@@ -35,18 +36,30 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
-    
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2));
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', true);
-
-    if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const MainScreen()),
-    );
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _usernameController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message = 'Login failed';
+      if (e.code == 'user-not-found') message = 'No user found for that email.';
+      else if (e.code == 'wrong-password') message = 'Wrong password provided.';
+      else if (e.message != null) message = e.message!;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override

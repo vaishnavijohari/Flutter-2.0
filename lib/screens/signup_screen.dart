@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'main_screen.dart';
 import '../widgets/common/auth_background.dart';
@@ -45,18 +46,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2));
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', true);
-    await prefs.setString('username', _usernameController.text.trim());
-
-    if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const MainScreen()),
-      (Route<dynamic> route) => false,
-    );
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+        (Route<dynamic> route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      String message = 'Signup failed';
+      if (e.code == 'email-already-in-use') message = 'Email already in use.';
+      else if (e.code == 'invalid-email') message = 'Invalid email address.';
+      else if (e.code == 'weak-password') message = 'Password is too weak.';
+      else if (e.message != null) message = e.message!;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override

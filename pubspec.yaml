@@ -26,6 +26,10 @@ dependencies:
   provider: ^6.1.2
   shared_preferences: ^2.2.3
 
+  # Firebase
+  firebase_core: ^2.25.4
+  firebase_auth: ^4.17.4
+
   # Social Logins
   google_sign_in: ^6.2.1
   flutter_facebook_auth: ^6.0.2
