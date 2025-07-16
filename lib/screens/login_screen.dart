@@ -152,10 +152,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _socialButton(theme, FontAwesomeIcons.google),
-                        const SizedBox(width: 20),
-                        _socialButton(theme, FontAwesomeIcons.facebook),
-                        const SizedBox(width: 20),
-                        _socialButton(theme, FontAwesomeIcons.apple),
                       ],
                     ),
                   ],

@@ -47,16 +47,33 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-        (Route<dynamic> route) => false,
-      );
+      final user = userCredential.user;
+      if (user != null && !user.emailVerified) {
+        await user.sendEmailVerification();
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Verify your email'),
+            content: const Text('A verification link has been sent to your email. Please verify your email before logging in.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+      // Optionally, sign out the user so they can't access the app until verified
+      await FirebaseAuth.instance.signOut();
+      if (mounted) {
+        Navigator.of(context).pop(); // Go back to login screen
+      }
     } on FirebaseAuthException catch (e) {
       String message = 'Signup failed';
       if (e.code == 'email-already-in-use') message = 'Email already in use.';
@@ -198,10 +215,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _socialButton(theme, FontAwesomeIcons.google),
-                        const SizedBox(width: 20),
-                        _socialButton(theme, FontAwesomeIcons.facebook),
-                        const SizedBox(width: 20),
-                        _socialButton(theme, FontAwesomeIcons.apple),
                       ],
                     ),
                   ],
