@@ -8,6 +8,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 
 import '../services/crypto_api_service.dart';
 import 'article_list_screen.dart';
+import '../dummy_data.dart';
 import '../models.dart';
 
 class CryptoScreen extends StatefulWidget {
@@ -18,10 +19,13 @@ class CryptoScreen extends StatefulWidget {
 }
 
 class _CryptoScreenState extends State<CryptoScreen> {
-  // --- STATE MANAGEMENT ---
   bool _isLoading = true;
   String? _errorMessage;
   List<CryptoCurrency> _cryptoList = [];
+  
+  List<Article> _trendingArticles = [];
+  List<Article> _newlyAddedArticles = [];
+  String _selectedTrendingCategory = 'Entertainment';
 
   final List<ArticleCategory> _articleCategories = [
     ArticleCategory(name: 'Finance & Crypto', imageUrl: 'assets/images/finance_crypto.jpg'),
@@ -33,11 +37,10 @@ class _CryptoScreenState extends State<CryptoScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchLivePrices();
+    _fetchAllData();
   }
 
-  // --- DATA FETCHING ---
-  Future<void> _fetchLivePrices() async {
+  Future<void> _fetchAllData() async {
     if (_cryptoList.isEmpty) {
       setState(() => _isLoading = true);
     }
@@ -52,9 +55,14 @@ class _CryptoScreenState extends State<CryptoScreen> {
         return a.name.compareTo(b.name);
       });
 
+      final newlyAdded = MockData.getNewlyAddedArticles();
+      final trending = MockData.getTrendingArticles(_selectedTrendingCategory);
+
       if (mounted) {
         setState(() {
           _cryptoList = prices;
+          _newlyAddedArticles = newlyAdded;
+          _trendingArticles = trending;
           _isLoading = false;
           _errorMessage = null;
         });
@@ -69,12 +77,19 @@ class _CryptoScreenState extends State<CryptoScreen> {
     }
   }
 
+  void _updateTrendingArticles(String category) {
+    setState(() {
+      _selectedTrendingCategory = category;
+      _trendingArticles = MockData.getTrendingArticles(category);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
-        onRefresh: _fetchLivePrices,
+        onRefresh: _fetchAllData,
         color: Theme.of(context).colorScheme.primary,
         backgroundColor: Theme.of(context).cardColor,
         child: _buildBody(),
@@ -102,9 +117,85 @@ class _CryptoScreenState extends State<CryptoScreen> {
               _buildCryptoCarousel(),
               const SizedBox(height: 32),
               _buildArticleSection(),
+              const SizedBox(height: 32),
+              _buildTrendingArticlesSection(),
+              const SizedBox(height: 32),
+              _buildNewlyAddedArticlesSection(),
               const SizedBox(height: 20),
             ],
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTrendingArticlesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text('Trending Articles', style: GoogleFonts.orbitron(fontSize: 20, fontWeight: FontWeight.bold)),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 50,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            children: _articleCategories.map((category) {
+              final isSelected = category.name == _selectedTrendingCategory;
+              final theme = Theme.of(context);
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: ChoiceChip(
+                  label: Text(category.name),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    if (selected) _updateTrendingArticles(category.name);
+                  },
+                  labelStyle: GoogleFonts.exo2(
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
+                  ),
+                  selectedColor: theme.colorScheme.primary,
+                  checkmarkColor: theme.colorScheme.onPrimary,
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 8),
+        ListView.builder(
+          itemCount: _trendingArticles.length,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemBuilder: (context, index) {
+            return _TrendingArticleListItem(article: _trendingArticles[index]);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNewlyAddedArticlesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text('Newly Added', style: GoogleFonts.orbitron(fontSize: 20, fontWeight: FontWeight.bold)),
+        ),
+        const SizedBox(height: 16),
+        ListView.builder(
+          itemCount: _newlyAddedArticles.length,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemBuilder: (context, index) {
+            return _NewlyAddedArticleListItem(article: _newlyAddedArticles[index]);
+          },
         ),
       ],
     );
@@ -162,7 +253,7 @@ class _CryptoScreenState extends State<CryptoScreen> {
     final theme = Theme.of(context);
     final shimmerColor = theme.brightness == Brightness.dark ? Colors.grey[900]! : Colors.grey[200]!;
     final shimmerHighlight = theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[100]!;
-    final placeholderColor = theme.colorScheme.surface; // MODIFIED
+    final placeholderColor = theme.colorScheme.surface;
 
     return Shimmer.fromColors(
       baseColor: shimmerColor,
@@ -172,7 +263,7 @@ class _CryptoScreenState extends State<CryptoScreen> {
           width: MediaQuery.of(context).size.width * 0.8,
           height: 180,
           decoration: BoxDecoration(
-            color: placeholderColor, // MODIFIED
+            color: placeholderColor,
             borderRadius: BorderRadius.circular(20),
           ),
         ),
@@ -187,13 +278,126 @@ class _CryptoScreenState extends State<CryptoScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // MODIFIED
             Icon(Icons.cloud_off, color: Theme.of(context).disabledColor, size: 60),
             const SizedBox(height: 20),
             Text(_errorMessage!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 20),
-            ElevatedButton(onPressed: _fetchLivePrices, child: const Text('Try Again')),
+            ElevatedButton(onPressed: _fetchAllData, child: const Text('Try Again')),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrendingArticleListItem extends StatelessWidget {
+  final Article article;
+  const _TrendingArticleListItem({required this.article});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      color: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () { /* Navigate to article detail */ },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  article.imageUrl,
+                  width: 80, height: 80, fit: BoxFit.cover,
+                  errorBuilder: (c, e, s) => Container(width: 80, height: 80, color: theme.scaffoldBackgroundColor),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      article.title,
+                      style: GoogleFonts.exo2(fontWeight: FontWeight.bold, fontSize: 15),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.visibility, size: 14, color: theme.textTheme.bodySmall?.color),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${NumberFormat.compact().format(article.views)} Views',
+                          style: GoogleFonts.exo2(fontSize: 12, color: theme.textTheme.bodySmall?.color),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NewlyAddedArticleListItem extends StatelessWidget {
+  final Article article;
+  const _NewlyAddedArticleListItem({required this.article});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      color: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () { /* Navigate to article detail */ },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  article.imageUrl,
+                  width: 80, height: 80, fit: BoxFit.cover,
+                  errorBuilder: (c, e, s) => Container(width: 80, height: 80, color: theme.scaffoldBackgroundColor),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      article.title,
+                      style: GoogleFonts.exo2(fontWeight: FontWeight.bold, fontSize: 15),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      article.category,
+                      style: GoogleFonts.exo2(fontSize: 12, color: theme.textTheme.bodySmall?.color),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -288,7 +492,6 @@ class ArticleCategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // MODIFIED: Using theme color
     final overlayColor = Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.black54;
 
     return ClipRRect(
@@ -315,14 +518,12 @@ class ArticleCategoryCard extends StatelessWidget {
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(
                 color: Theme.of(context).colorScheme.surface,
-                // MODIFIED: Using theme color
                 child: Icon(Icons.image_not_supported, color: Theme.of(context).dividerColor),
               ),
             ),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  // MODIFIED: Using theme-aware overlay color
                   colors: [Colors.transparent, overlayColor.withAlpha(200)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -336,7 +537,6 @@ class ArticleCategoryCard extends StatelessWidget {
               right: 12,
               child: Text(
                 category.name,
-                // MODIFIED: Text color is now always white for legibility on the dark gradient
                 style: GoogleFonts.exo2(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
