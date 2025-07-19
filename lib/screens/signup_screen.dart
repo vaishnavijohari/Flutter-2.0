@@ -57,7 +57,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       final user = userCredential.user;
       if (user != null && !user.emailVerified) {
         await user.sendEmailVerification();
-        if (!mounted) return;
+      if (!mounted) return;
         await showDialog(
           context: context,
           builder: (context) => AlertDialog(

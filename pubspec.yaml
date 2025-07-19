@@ -29,11 +29,12 @@ dependencies:
   # Firebase
   firebase_core: ^2.25.4
   firebase_auth: ^4.17.4
+  cloud_firestore: ^4.15.4
+  firebase_storage: ^11.6.5
 
   # Social Logins
   google_sign_in: ^6.2.1
   flutter_facebook_auth: ^6.0.2
-  twitter_login: ^4.4.0
 
   #Internet Connection
   connectivity_plus: ^6.0.3
@@ -54,7 +55,6 @@ flutter:
   # Asset declaration
   assets:
     - assets/logo.png
-    - assets/images/ # <-- ADDED: Includes all images in this folder
 
   # Font declaration
   # To use this, create a 'fonts' folder in your project's root

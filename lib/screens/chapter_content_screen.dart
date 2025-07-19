@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../models.dart';
 import '../providers/reader_settings_provider.dart';
+import '../services/firebase_chapter_service.dart';
 
 class ChapterContentScreen extends StatefulWidget {
   final StoryDetail storyDetail;
@@ -26,6 +27,7 @@ class _ChapterContentScreenState extends State<ChapterContentScreen> with Single
   late AnimationController _navBarAnimationController;
 
   final Map<int, String> _chapterContentCache = {};
+  final ChapterService _chapterService = ChapterService();
   bool _isContentLoading = true;
 
   @override
@@ -57,25 +59,54 @@ class _ChapterContentScreenState extends State<ChapterContentScreen> with Single
   }
   
   Future<void> _loadInitialChapter() async {
-    await _fetchChapterContent(_currentChapterIndex);
+    await _loadChapterContent(_currentChapterIndex);
     if (_currentChapterIndex + 1 < widget.storyDetail.chapters.length) {
-      _fetchChapterContent(_currentChapterIndex + 1, isPreload: true);
+      _loadChapterContent(_currentChapterIndex + 1);
     }
   }
 
-  Future<void> _fetchChapterContent(int chapterIndex, {bool isPreload = false}) async {
-    if (_chapterContentCache.containsKey(chapterIndex)) return;
-    if (!isPreload && mounted) setState(() => _isContentLoading = true);
-
-    await Future.delayed(const Duration(milliseconds: 600));
-    final content = 'This is the full content for Chapter ${chapterIndex + 1}. ' * 100 + 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ' * 5;
-    
-    if (mounted) {
-      setState(() {
-        _chapterContentCache[chapterIndex] = content;
-        if (!isPreload) _isContentLoading = false;
-      });
+  Future<void> _loadChapterContent(int chapterIndex) async {
+    if (_chapterContentCache.containsKey(chapterIndex)) {
+      setState(() => _isContentLoading = false);
+      return;
     }
+
+    setState(() => _isContentLoading = true);
+    
+    try {
+      final chapterNumber = chapterIndex + 1;
+      final content = await _chapterService.getChapterContent(
+        widget.storyDetail.id, 
+        chapterNumber
+      );
+      
+      _chapterContentCache[chapterIndex] = content;
+      
+      if (mounted) {
+        setState(() => _isContentLoading = false);
+      }
+    } catch (e) {
+      // Fallback to mock content
+      _chapterContentCache[chapterIndex] = _getMockChapterContent(chapterIndex + 1);
+      
+      if (mounted) {
+        setState(() => _isContentLoading = false);
+      }
+    }
+  }
+
+  String _getMockChapterContent(int chapterNumber) {
+    return '''
+Chapter $chapterNumber: ${widget.storyDetail.chapters[chapterNumber - 1].title}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
+
+Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
+    ''';
   }
 
   Chapter get _currentChapter => widget.storyDetail.chapters[_currentChapterIndex];
@@ -85,7 +116,7 @@ class _ChapterContentScreenState extends State<ChapterContentScreen> with Single
       setState(() {
         _currentChapterIndex = index;
         if (!_chapterContentCache.containsKey(index)) {
-          _fetchChapterContent(index);
+          _loadChapterContent(index);
         } else {
           _isContentLoading = false;
         }
@@ -95,7 +126,7 @@ class _ChapterContentScreenState extends State<ChapterContentScreen> with Single
 
       final nextChapterIndex = index + 1;
       if (nextChapterIndex < widget.storyDetail.chapters.length) {
-        _fetchChapterContent(nextChapterIndex, isPreload: true);
+        _loadChapterContent(nextChapterIndex);
       }
     }
   }

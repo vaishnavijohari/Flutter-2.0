@@ -1,6 +1,7 @@
 // lib/models.dart
 
 import 'package:fl_chart/fl_chart.dart'; // ADDED: To get access to the FlSpot class for chart data
+import 'package:cloud_firestore/cloud_firestore.dart'; // ADDED: For Firebase Firestore
 
 // --- Story & Chapter Models ---
 
@@ -36,6 +37,213 @@ class StoryDetail extends Story {
     required this.genres,
     required this.chapters,
   });
+}
+
+// --- FIREBASE MODELS ---
+
+// Firebase Story Model
+class FirebaseStory {
+  final String id;
+  final String title;
+  final String description;
+  final String category; // 'original' | 'fan-fiction'
+  final String status; // 'draft' | 'published'
+  final String coverImage;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String authorId;
+  final int chapterCount;
+
+  FirebaseStory({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.category,
+    required this.status,
+    this.coverImage = '',
+    required this.createdAt,
+    required this.updatedAt,
+    required this.authorId,
+    this.chapterCount = 0,
+  });
+
+  factory FirebaseStory.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return FirebaseStory(
+      id: doc.id,
+      title: data['title'] ?? '',
+      description: data['description'] ?? '',
+      category: data['category'] ?? 'original',
+      status: data['status'] ?? 'draft',
+      coverImage: data['coverImage'] ?? '',
+      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      authorId: data['authorId'] ?? '',
+      chapterCount: data['chapters'] ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'title': title,
+      'description': description,
+      'category': category,
+      'status': status,
+      'coverImage': coverImage,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+      'authorId': authorId,
+      'chapters': chapterCount,
+    };
+  }
+
+  // Convert to legacy Story model for compatibility
+  Story toLegacyStory() {
+    return Story(
+      id: id,
+      title: title,
+      imageUrl: coverImage.isNotEmpty ? coverImage : 'https://via.placeholder.com/150x220?text=${title.replaceAll(' ', '+').substring(0, 8)}'
+    );
+  }
+}
+
+// Firebase Article Model
+class FirebaseArticle {
+  final String id;
+  final String title;
+  final String description;
+  final String content;
+  final String category; // 'Finance & Crypto' | 'Entertainment' | 'Sports'
+  final String status; // 'draft' | 'published'
+  final String coverImage;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final int wordCount;
+  final String authorId;
+
+  FirebaseArticle({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.content,
+    required this.category,
+    required this.status,
+    this.coverImage = '',
+    required this.createdAt,
+    required this.updatedAt,
+    required this.wordCount,
+    required this.authorId,
+  });
+
+  factory FirebaseArticle.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return FirebaseArticle(
+      id: doc.id,
+      title: data['title'] ?? '',
+      description: data['description'] ?? '',
+      content: data['content'] ?? '',
+      category: data['category'] ?? 'Entertainment',
+      status: data['status'] ?? 'draft',
+      coverImage: data['coverImage'] ?? '',
+      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      wordCount: data['wordCount'] ?? 0,
+      authorId: data['authorId'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'title': title,
+      'description': description,
+      'content': content,
+      'category': category,
+      'status': status,
+      'coverImage': coverImage,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+      'wordCount': wordCount,
+      'authorId': authorId,
+    };
+  }
+
+  // Convert to legacy Article model for compatibility
+  Article toLegacyArticle() {
+    return Article(
+      id: id,
+      title: title,
+      imageUrl: coverImage.isNotEmpty ? coverImage : 'https://via.placeholder.com/400x250?text=${category.replaceAll(' ', '+')}+News',
+      author: 'Admin',
+      publishedDate: '${createdAt.day}/${createdAt.month}/${createdAt.year}',
+      category: category,
+      content: content,
+    );
+  }
+}
+
+// Firebase Chapter Model
+class FirebaseChapter {
+  final String id;
+  final String storyId;
+  final int chapterNumber;
+  final String title;
+  final String content;
+  final String status; // 'draft' | 'published'
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final int wordCount;
+  final String authorId;
+
+  FirebaseChapter({
+    required this.id,
+    required this.storyId,
+    required this.chapterNumber,
+    required this.title,
+    required this.content,
+    required this.status,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.wordCount,
+    required this.authorId,
+  });
+
+  factory FirebaseChapter.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return FirebaseChapter(
+      id: doc.id,
+      storyId: data['storyId'] ?? '',
+      chapterNumber: data['chapterNumber'] ?? 1,
+      title: data['title'] ?? '',
+      content: data['content'] ?? '',
+      status: data['status'] ?? 'draft',
+      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      wordCount: data['wordCount'] ?? 0,
+      authorId: data['authorId'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'storyId': storyId,
+      'chapterNumber': chapterNumber,
+      'title': title,
+      'content': content,
+      'status': status,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+      'wordCount': wordCount,
+      'authorId': authorId,
+    };
+  }
+
+  // Convert to legacy Chapter model for compatibility
+  Chapter toLegacyChapter() {
+    return Chapter(
+      title: title,
+      chapterNumber: chapterNumber,
+    );
+  }
 }
 
 // --- Home Page Models ---
