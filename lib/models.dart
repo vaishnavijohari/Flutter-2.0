@@ -1,7 +1,5 @@
 // lib/models.dart
 
-import 'package:fl_chart/fl_chart.dart'; // ADDED: To get access to the FlSpot class for chart data
-
 // --- Story & Chapter Models ---
 
 class Story {
@@ -96,6 +94,7 @@ class Article {
   final String publishedDate;
   final String category;
   final String content;
+  final int views;
 
   Article({
     required this.id,
@@ -105,6 +104,7 @@ class Article {
     required this.publishedDate,
     required this.category,
     required this.content,
+    required this.views,
   });
 }
 
@@ -115,7 +115,7 @@ class ArticleCategory {
 }
 
 
-// --- Crypto Models & Enums ---
+// --- Crypto Models ---
 
 class CryptoCurrency {
   final String id;
@@ -123,8 +123,6 @@ class CryptoCurrency {
   final String name;
   final double price;
   final double change24h;
-  // This map now holds chart data for different time ranges
-  Map<TimeRange, List<FlSpot>> priceData;
 
   CryptoCurrency({
     required this.id,
@@ -132,13 +130,8 @@ class CryptoCurrency {
     required this.name,
     required this.price,
     required this.change24h,
-    required this.priceData,
   });
 }
-
-enum TimeRange { oneDay, oneWeek, oneMonth, sixMonths }
-
-// Add this class to your lib/models.dart file
 
 class ReadingListStory {
   final Story story;
