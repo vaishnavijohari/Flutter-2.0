@@ -69,12 +69,24 @@ class FirebaseStory {
 
   factory FirebaseStory.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    
+    // Normalize status to lowercase
+    String status = (data['status'] ?? 'draft').toString().toLowerCase();
+    
+    // Normalize category to lowercase and handle variations
+    String category = (data['category'] ?? 'original').toString().toLowerCase();
+    if (category == 'fan-fiction' || category == 'fanfiction') {
+      category = 'fan-fiction';
+    } else if (category == 'original') {
+      category = 'original';
+    }
+    
     return FirebaseStory(
       id: doc.id,
       title: data['title'] ?? '',
       description: data['description'] ?? '',
-      category: data['category'] ?? 'original',
-      status: data['status'] ?? 'draft',
+      category: category,
+      status: status,
       coverImage: data['coverImage'] ?? '',
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
@@ -137,13 +149,29 @@ class FirebaseArticle {
 
   factory FirebaseArticle.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    
+    // Normalize status to lowercase
+    String status = (data['status'] ?? 'draft').toString().toLowerCase();
+    
+    // Normalize category to lowercase and handle variations
+    String category = (data['category'] ?? 'Entertainment').toString().toLowerCase();
+    if (category == 'finance & crypto' || category == 'finance and crypto') {
+      category = 'Finance & Crypto';
+    } else if (category == 'entertainment') {
+      category = 'Entertainment';
+    } else if (category == 'sports') {
+      category = 'Sports';
+    } else if (category == 'world') {
+      category = 'World';
+    }
+    
     return FirebaseArticle(
       id: doc.id,
       title: data['title'] ?? '',
       description: data['description'] ?? '',
       content: data['content'] ?? '',
-      category: data['category'] ?? 'Entertainment',
-      status: data['status'] ?? 'draft',
+      category: category,
+      status: status,
       coverImage: data['coverImage'] ?? '',
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
@@ -209,13 +237,17 @@ class FirebaseChapter {
 
   factory FirebaseChapter.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    
+    // Normalize status to lowercase
+    String status = (data['status'] ?? 'draft').toString().toLowerCase();
+    
     return FirebaseChapter(
       id: doc.id,
       storyId: data['storyId'] ?? '',
       chapterNumber: data['chapterNumber'] ?? 1,
       title: data['title'] ?? '',
       content: data['content'] ?? '',
-      status: data['status'] ?? 'draft',
+      status: status,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
       wordCount: data['wordCount'] ?? 0,

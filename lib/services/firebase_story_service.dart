@@ -45,17 +45,48 @@ class StoryService {
     }
   }
 
+  // Debug method to get all stories without any filters
+  Future<List<FirebaseStory>> getAllStoriesDebug() async {
+    try {
+      QuerySnapshot snapshot = await _firestore.collection(_collection).get();
+      
+      print('=== DEBUG: All Stories in Database ===');
+      print('Total documents found: ${snapshot.docs.length}');
+      
+      for (var doc in snapshot.docs) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        print('Document ID: ${doc.id}');
+        print('  Title: ${data['title'] ?? 'NO TITLE'}');
+        print('  Status: ${data['status'] ?? 'NO STATUS'}');
+        print('  Category: ${data['category'] ?? 'NO CATEGORY'}');
+        print('  CreatedAt: ${data['createdAt'] ?? 'NO CREATEDAT'}');
+        print('  UpdatedAt: ${data['updatedAt'] ?? 'NO UPDATEDAT'}');
+        print('  ---');
+      }
+      
+      return snapshot.docs
+          .map((doc) => FirebaseStory.fromFirestore(doc))
+          .toList();
+    } catch (e) {
+      print('DEBUG ERROR: $e');
+      throw Exception('Failed to fetch all stories for debug: $e');
+    }
+  }
+
   // Get published stories only (for public access)
   Future<List<FirebaseStory>> getPublishedStories({
     String? categoryFilter,
   }) async {
     try {
+      // Since the database has "Published" (capitalized), we need to query for that
       Query query = _firestore
           .collection(_collection)
-          .where('status', isEqualTo: 'published');
+          .where('status', isEqualTo: 'Published');
       
       if (categoryFilter != null) {
-        query = query.where('category', isEqualTo: categoryFilter);
+        // Also handle capitalized category values
+        String dbCategory = categoryFilter == 'original' ? 'Original' : 'Fan-Fiction';
+        query = query.where('category', isEqualTo: dbCategory);
       }
       
       QuerySnapshot snapshot = await query.get();
@@ -72,12 +103,18 @@ class StoryService {
   // Get stories by category for the Stories screen
   Future<List<FirebaseStory>> getStoriesByCategory(String category) async {
     try {
-      String categoryFilter = category.toLowerCase() == 'originals' ? 'original' : 'fan-fiction';
+      // Map the UI category to the database category values
+      String dbCategory;
+      if (category.toLowerCase() == 'originals') {
+        dbCategory = 'Original';
+      } else {
+        dbCategory = 'Fan-Fiction';
+      }
       
       QuerySnapshot snapshot = await _firestore
           .collection(_collection)
-          .where('status', isEqualTo: 'published')
-          .where('category', isEqualTo: categoryFilter)
+          .where('status', isEqualTo: 'Published')
+          .where('category', isEqualTo: dbCategory)
           .get();
       
       return snapshot.docs
@@ -165,7 +202,7 @@ class StoryService {
   Stream<List<FirebaseStory>> getStoriesStream() {
     return _firestore
         .collection(_collection)
-        .where('status', isEqualTo: 'published')
+        .where('status', isEqualTo: 'Published')
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => FirebaseStory.fromFirestore(doc))
@@ -178,14 +215,17 @@ class StoryService {
     try {
       QuerySnapshot snapshot = await _firestore
           .collection(_collection)
-          .where('status', isEqualTo: 'published')
-          .orderBy('createdAt', descending: true)
+          .where('status', isEqualTo: 'Published')
           .limit(limit)
           .get();
       
-      return snapshot.docs
+      // Sort in memory instead of using orderBy to avoid index requirement
+      List<FirebaseStory> stories = snapshot.docs
           .map((doc) => FirebaseStory.fromFirestore(doc))
           .toList();
+      
+      stories.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return stories.take(limit).toList();
     } catch (e) {
       throw Exception('Failed to fetch newly added stories: $e');
     }
@@ -196,14 +236,17 @@ class StoryService {
     try {
       QuerySnapshot snapshot = await _firestore
           .collection(_collection)
-          .where('status', isEqualTo: 'published')
-          .orderBy('updatedAt', descending: true)
+          .where('status', isEqualTo: 'Published')
           .limit(limit)
           .get();
       
-      return snapshot.docs
+      // Sort in memory instead of using orderBy to avoid index requirement
+      List<FirebaseStory> stories = snapshot.docs
           .map((doc) => FirebaseStory.fromFirestore(doc))
           .toList();
+      
+      stories.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      return stories.take(limit).toList();
     } catch (e) {
       throw Exception('Failed to fetch trending stories: $e');
     }

@@ -14,12 +14,23 @@ class StoryRepository {
   // --- Home Screen Data ---
   Future<HomePageData> getHomePageData() async {
     try {
+      // DEBUG: First, let's see what's actually in the database
+      print('=== FETCHING STORIES FROM FIREBASE ===');
+      List<FirebaseStory> allStories = await _storyService.getAllStoriesDebug();
+      print('--- All Published Stories ---');
+      List<FirebaseStory> publishedStories = allStories.where((s) => s.status == 'published').toList();
+      print('Total published stories: ${publishedStories.length}');
+      
       // Fetch newly added stories from Firebase
       List<FirebaseStory> firebaseNewlyAdded = await _storyService.getNewlyAddedStories(limit: 5);
+      print('--- Newly Added Stories ---');
+      print('Newly added stories: ${firebaseNewlyAdded.length}');
       List<Story> newlyAdded = firebaseNewlyAdded.map((fs) => fs.toLegacyStory()).toList();
 
       // Fetch trending stories (using recently updated as trending)
       List<FirebaseStory> firebaseTrendingStories = await _storyService.getTrendingStories(limit: 9); // 3 for each period
+      print('--- Trending Stories ---');
+      print('Trending stories: ${firebaseTrendingStories.length}');
       
       // Split trending stories into daily, weekly, monthly (mock division for now)
       List<TrendingStory> daily = firebaseTrendingStories.take(3).map((fs) => 
@@ -59,6 +70,14 @@ class StoryRepository {
           time: _getTimeAgo(fs.updatedAt),
         )
       ).toList();
+
+      // Debug category queries
+      print('--- Stories by Category ---');
+      List<FirebaseStory> originals = allStories.where((s) => s.category == 'original' && s.status == 'published').toList();
+      List<FirebaseStory> fanFiction = allStories.where((s) => s.category == 'fan-fiction' && s.status == 'published').toList();
+      print('Originals: ${originals.length}');
+      print('Fan-Fiction: ${fanFiction.length}');
+      print('=== FIREBASE STORIES FETCH COMPLETE ===');
 
       return HomePageData(
         newlyAddedStories: newlyAdded,

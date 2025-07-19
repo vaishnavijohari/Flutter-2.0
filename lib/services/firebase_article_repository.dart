@@ -8,11 +8,25 @@ class FirebaseArticleRepository {
   // Get articles by category for the crypto/article screens
   Future<List<Article>> getArticlesByCategory(String categoryName) async {
     try {
+      print('=== FETCHING ARTICLES FROM FIREBASE ===');
+      print('Category: $categoryName');
+      
+      // Debug: First, let's see what's actually in the database
+      List<FirebaseArticle> allArticles = await _articleService.getAllArticlesDebug();
+      print('--- All Articles in Database ---');
+      print('Total articles found: ${allArticles.length}');
+      
       List<FirebaseArticle> firebaseArticles = await _articleService.getArticlesByCategory(categoryName);
+      print('--- Articles by Category ---');
+      print('Articles for category "$categoryName": ${firebaseArticles.length}');
       
       // Convert Firebase articles to legacy Article models
-      return firebaseArticles.map((fa) => fa.toLegacyArticle()).toList();
+      List<Article> articles = firebaseArticles.map((fa) => fa.toLegacyArticle()).toList();
+      print('=== FIREBASE ARTICLES FETCH COMPLETE ===');
+      
+      return articles;
     } catch (e) {
+      print('Article fetch error: $e');
       // Fallback to mock data
       return MockData.getArticlesByCategory(categoryName);
     }
@@ -21,11 +35,24 @@ class FirebaseArticleRepository {
   // Get all published articles
   Future<List<Article>> getAllPublishedArticles() async {
     try {
+      print('=== FETCHING ALL PUBLISHED ARTICLES ===');
+      
+      // Debug: First, let's see what's actually in the database
+      List<FirebaseArticle> allArticles = await _articleService.getAllArticlesDebug();
+      print('--- All Articles in Database ---');
+      print('Total articles found: ${allArticles.length}');
+      
       List<FirebaseArticle> firebaseArticles = await _articleService.getPublishedArticles();
+      print('--- Published Articles ---');
+      print('Published articles: ${firebaseArticles.length}');
       
       // Convert Firebase articles to legacy Article models
-      return firebaseArticles.map((fa) => fa.toLegacyArticle()).toList();
+      List<Article> articles = firebaseArticles.map((fa) => fa.toLegacyArticle()).toList();
+      print('=== FIREBASE ARTICLES FETCH COMPLETE ===');
+      
+      return articles;
     } catch (e) {
+      print('Article fetch error: $e');
       // Fallback to mock data - combine all categories
       List<Article> allArticles = [];
       List<String> categories = ['Finance & Crypto', 'Entertainment', 'Sports', 'World'];
