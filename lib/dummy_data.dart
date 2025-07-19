@@ -1,10 +1,46 @@
-// lib/dummy_data.dart
-
 import 'dart:math';
 import 'models.dart';
 
-// RENAMED for clarity: This class provides static mock data, not a live service.
 class MockData {
+  
+  static List<Article> _getAllArticles() {
+    final categories = ['Finance & Crypto', 'Entertainment', 'Sports', 'World'];
+    final allArticles = <Article>[];
+    for (var category in categories) {
+      allArticles.addAll(getArticlesByCategory(category));
+    }
+    return allArticles;
+  }
+
+  static List<Article> getArticlesByCategory(String category) {
+    final random = Random();
+    return List.generate(20, (index) {
+      final date = DateTime.now().subtract(Duration(days: index * 2 + random.nextInt(5)));
+      return Article(
+        id: '$category-$index',
+        title: 'Exploring the World of $category in ${date.year}',
+        imageUrl: 'https://via.placeholder.com/400x250?text=$category+News',
+        author: 'Jane Smith',
+        publishedDate: '${date.day}/${date.month}/${date.year}',
+        category: category,
+        content: 'This is the full article content about $category. It discusses various trends and provides in-depth analysis. ' * 20,
+        views: random.nextInt(95000) + 5000,
+      );
+    });
+  }
+
+  static List<Article> getTrendingArticles(String category) {
+    final articles = getArticlesByCategory(category);
+    articles.sort((a, b) => b.views.compareTo(a.views));
+    return articles.take(3).toList();
+  }
+
+  static List<Article> getNewlyAddedArticles() {
+    final articles = _getAllArticles();
+    articles.sort((a, b) => b.publishedDate.compareTo(a.publishedDate));
+    return articles.take(5).toList();
+  }
+  
   static Story? getStoryById(String id) {
     try {
       String title;
@@ -27,21 +63,5 @@ class MockData {
     } catch (e) {
       return null;
     }
-  }
-
-  static List<Article> getArticlesByCategory(String category) {
-    final random = Random();
-    return List.generate(10, (index) {
-      final date = DateTime.now().subtract(Duration(days: random.nextInt(30)));
-      return Article(
-        id: '$category-$index',
-        title: 'Top 10 Trends in $category for ${date.year}',
-        imageUrl: 'https://via.placeholder.com/400x250?text=$category+News',
-        author: 'John Doe',
-        publishedDate: '${date.day}/${date.month}/${date.year}',
-        category: category,
-        content: 'This is the full article content about $category. It discusses various trends and provides in-depth analysis. ' * 20,
-      );
-    });
   }
 }
