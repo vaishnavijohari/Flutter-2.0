@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../models.dart';
 import '../dummy_data.dart';
+import '../services/firebase_article_repository.dart';
 import 'article_detail_screen.dart';
 
 class ArticleListScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   List<Article> _articles = [];
+  final FirebaseArticleRepository _articleRepository = FirebaseArticleRepository();
 
   @override
   void initState() {
@@ -36,8 +38,7 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
-      final articles = MockData.getArticlesByCategory(widget.categoryName);
+      final articles = await _articleRepository.getArticlesByCategory(widget.categoryName);
 
       if (mounted) {
         setState(() {
