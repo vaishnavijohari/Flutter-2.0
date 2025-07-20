@@ -79,8 +79,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       }
     } on FirebaseAuthException catch (e) {
       String message = 'Signup failed';
-      if (e.code == 'email-already-in-use') message = 'Email already in use.';
-      else if (e.code == 'invalid-email') message = 'Invalid email address.';
+      if (e.code == 'email-already-in-use') {
+        message = 'Email already in use.';
+      } else if (e.code == 'invalid-email') message = 'Invalid email address.';
       else if (e.code == 'weak-password') message = 'Password is too weak.';
       else if (e.message != null) message = e.message!;
       if (mounted) {
