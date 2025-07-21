@@ -10,10 +10,12 @@ class CrosswordLevelSelectionScreen extends StatefulWidget {
   const CrosswordLevelSelectionScreen({super.key});
 
   @override
-  State<CrosswordLevelSelectionScreen> createState() => _CrosswordLevelSelectionScreenState();
+  State<CrosswordLevelSelectionScreen> createState() =>
+      _CrosswordLevelSelectionScreenState();
 }
 
-class _CrosswordLevelSelectionScreenState extends State<CrosswordLevelSelectionScreen> {
+class _CrosswordLevelSelectionScreenState
+    extends State<CrosswordLevelSelectionScreen> {
   int _highestLevelUnlocked = 0;
 
   @override
@@ -25,7 +27,8 @@ class _CrosswordLevelSelectionScreenState extends State<CrosswordLevelSelectionS
   Future<void> _loadProgress() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _highestLevelUnlocked = prefs.getInt('crossword_highest_level_unlocked') ?? 0;
+      _highestLevelUnlocked =
+          prefs.getInt('crossword_highest_level_unlocked') ?? 0;
     });
   }
 
@@ -34,36 +37,57 @@ class _CrosswordLevelSelectionScreenState extends State<CrosswordLevelSelectionS
     return Scaffold(
       appBar: AppBar(
         title: Text("Select a Puzzle", style: GoogleFonts.orbitron()),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
       ),
       body: GridView.builder(
         padding: const EdgeInsets.all(16),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 5,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
+          crossAxisCount: 4, // Changed to 4 for better spacing
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
         ),
         itemCount: allCrosswordPuzzles.length,
         itemBuilder: (context, index) {
-          final puzzle = allCrosswordPuzzles[index];
-          final bool isLocked = index > _highestLevelUnlocked;
+          final isLocked = index > _highestLevelUnlocked;
+          final isCurrent = index == _highestLevelUnlocked;
 
           return InkWell(
-            onTap: isLocked ? null : () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CrosswordScreen(puzzle: puzzle, levelIndex: index),
-                ),
-              ).then((_) {
-                // Refresh the screen when returning to show newly unlocked levels
-                _loadProgress();
-              });
-            },
-            child: Container(
+            onTap: isLocked
+                ? null
+                : () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CrosswordScreen(
+                            puzzle: allCrosswordPuzzles[index],
+                            levelIndex: index),
+                      ),
+                    ).then((_) {
+                      _loadProgress();
+                    });
+                  },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
               decoration: BoxDecoration(
-                color: isLocked ? Colors.grey.shade800 : Theme.of(context).cardColor,
+                color: isLocked
+                    ? Colors.grey.shade800
+                    : isCurrent
+                        ? Theme.of(context).primaryColor.withOpacity(0.9)
+                        : Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isLocked ? Colors.grey.shade700 : Theme.of(context).dividerColor),
+                border: isCurrent
+                    ? Border.all(
+                        color: Theme.of(context).primaryColorLight, width: 2)
+                    : Border.all(color: Colors.grey.shade700),
+                boxShadow: [
+                  if (!isLocked)
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(4, 4),
+                    ),
+                ],
               ),
               child: Center(
                 child: isLocked
@@ -71,8 +95,9 @@ class _CrosswordLevelSelectionScreenState extends State<CrosswordLevelSelectionS
                     : Text(
                         "${index + 1}",
                         style: GoogleFonts.orbitron(
-                          fontSize: 24,
+                          fontSize: 28,
                           fontWeight: FontWeight.bold,
+                          color: isCurrent ? Colors.white : null,
                         ),
                       ),
               ),
