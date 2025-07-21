@@ -204,6 +204,7 @@ class FirebaseArticle {
       publishedDate: '${createdAt.day}/${createdAt.month}/${createdAt.year}',
       category: category,
       content: content,
+      views: 0,
     );
   }
 }

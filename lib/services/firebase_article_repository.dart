@@ -80,6 +80,7 @@ class FirebaseArticleRepository {
         publishedDate: '01/01/2024',
         category: 'Entertainment',
         content: 'This is a sample article content. Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        views: 0,
       );
     }
   }
