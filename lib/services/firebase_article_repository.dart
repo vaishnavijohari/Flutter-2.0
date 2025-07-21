@@ -1,6 +1,9 @@
 import '../models.dart';
 import 'firebase_article_service.dart';
 import '../dummy_data.dart';
+import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter/material.dart';
+import 'package:freemium_novels_app/screens/article_detail_screen.dart';
 
 class FirebaseArticleRepository {
   final ArticleService _articleService = ArticleService();

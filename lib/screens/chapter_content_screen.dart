@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_html/flutter_html.dart';
 
 import '../models.dart';
 import '../providers/reader_settings_provider.dart';
@@ -290,15 +291,16 @@ Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed 
                   const Divider(height: 32),
                   _isContentLoading
                       ? const Center(child: CircularProgressIndicator())
-                      : Text(
-                          _chapterContentCache[_currentChapterIndex] ?? 'Could not load content.',
-                          style: TextStyle(
-                            fontSize: settings.fontSize,
-                            height: 1.7,
-                            fontFamily: settings.font,
-                            color: settings.textColor,
-                          ),
-                          textAlign: TextAlign.justify,
+                      : Html(
+                          data: _chapterContentCache[_currentChapterIndex] ?? 'Could not load content.',
+                          style: {
+                            "body": Style(
+                              fontSize: FontSize(settings.fontSize),
+                              color: settings.textColor,
+                              fontFamily: settings.font,
+                              lineHeight: LineHeight(1.7),
+                            ),
+                          },
                         ),
                 ],
               ),

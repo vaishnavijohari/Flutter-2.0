@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_html/flutter_html.dart';
 
 import '../models.dart';
 import '../dummy_data.dart'; // To fetch recommended articles
@@ -138,12 +139,23 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                     ),
                   ),
                   const Divider(height: 32),
-                  Text(
-                    widget.article.content,
-                    style: GoogleFonts.exo2(
-                      textStyle: theme.textTheme.bodyLarge,
-                      height: 1.6,
-                    ),
+                  // Text(
+                  //   widget.article.content,
+                  //   style: GoogleFonts.exo2(
+                  //     textStyle: theme.textTheme.bodyLarge,
+                  //     height: 1.6,
+                  //   ),
+                  // ),
+                  Html(
+                    data: widget.article.content,
+                    style: {
+                      "body": Style(
+                        fontSize: FontSize(16.0),
+                        color: theme.textTheme.bodyLarge?.color,
+                        fontFamily: GoogleFonts.exo2().fontFamily,
+                        lineHeight: LineHeight(1.6),
+                      ),
+                    },
                   ),
                   const SizedBox(height: 24),
                   // --- NEW: "Read Also" section ---
