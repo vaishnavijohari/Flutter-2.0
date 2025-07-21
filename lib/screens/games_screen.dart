@@ -2,7 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../games/word_guess/word_guess_screen.dart'; // <-- Import the new game
+import '../games/word_guess/word_guess_screen.dart';
+import '../games/crossword/crossword_level_selection_screen.dart'; // <-- Corrected import
 
 class GameInfo {
   final String title;
@@ -30,7 +31,13 @@ class GamesScreen extends StatelessWidget {
         icon: Icons.abc_rounded,
         screen: const WordGuessScreen(),
       ),
-      // You can add the second game here later
+      // --- FIXED: This now correctly points to the level selection screen ---
+      GameInfo(
+        title: "Crossword Puzzle",
+        description: "Test your knowledge with 50 classic word puzzles.",
+        icon: Icons.grid_on_rounded,
+        screen: const CrosswordLevelSelectionScreen(),
+      ),
     ];
 
     return Scaffold(
@@ -48,7 +55,8 @@ class GamesScreen extends StatelessWidget {
           return Card(
             margin: const EdgeInsets.only(bottom: 16),
             elevation: 4,
-            shadowColor: Colors.black.withOpacity(0.1),
+            // --- FIXED: Replaced deprecated withOpacity ---
+            shadowColor: Colors.black.withAlpha((255 * 0.1).round()),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
             child: InkWell(
               borderRadius: BorderRadius.circular(15),
