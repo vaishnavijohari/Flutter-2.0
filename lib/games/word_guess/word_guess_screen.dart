@@ -16,7 +16,6 @@ class WordGuessScreen extends StatefulWidget {
 }
 
 class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderStateMixin {
-  // --- MODIFIED: Game constants for lives ---
   static const int _maxLives = 3;
   static const Duration _lifeRegenDuration = Duration(minutes: 10);
 
@@ -32,7 +31,6 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
   late List<AnimationController> _keyPressControllers;
   late AnimationController _levelStartController;
 
-  // --- NEW: Timer for life regeneration ---
   Timer? _lifeRegenTimer;
   Duration? _timeUntilNextLife;
 
@@ -56,7 +54,6 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
     _initializeGame();
   }
   
-  // --- NEW: Central method to initialize or reset the game ---
   Future<void> _initializeGame() async {
     await _loadAndCalculateLives();
     _startLevel(_currentLevel);
@@ -69,12 +66,10 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
     for (var controller in _keyPressControllers) {
       controller.dispose();
     }
-    // --- NEW: Cancel the timer ---
     _lifeRegenTimer?.cancel();
     super.dispose();
   }
 
-  // --- NEW: Load lives from storage and calculate regeneration ---
   Future<void> _loadAndCalculateLives() async {
     final prefs = await SharedPreferences.getInstance();
     int savedLives = prefs.getInt('wordguess_lives') ?? _maxLives;
@@ -88,11 +83,9 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
         int livesRegenerated = timeSinceLastLoss.inMinutes ~/ _lifeRegenDuration.inMinutes;
         savedLives = min(_maxLives, savedLives + livesRegenerated);
         
-        // If lives are fully regenerated, clear the timestamp
         if (savedLives == _maxLives) {
           await prefs.remove('wordguess_lastLostTimestamp');
         } else {
-          // Otherwise, update the timestamp to the last regeneration time
           final newTimestamp = lastLostTimestamp + (livesRegenerated * _lifeRegenDuration.inMilliseconds);
           await prefs.setInt('wordguess_lastLostTimestamp', newTimestamp);
         }
@@ -108,18 +101,15 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
     }
   }
 
-  // --- NEW: Save the current state of lives to persistent storage ---
   Future<void> _saveLifeState({required bool lifeWasLost}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('wordguess_lives', _lives);
     if (lifeWasLost && _lives < _maxLives) {
-      // Only set a new timestamp if a life was just lost and we're not full
       await prefs.setInt('wordguess_lastLostTimestamp', DateTime.now().millisecondsSinceEpoch);
     }
     _startLifeRegenTimer();
   }
 
-  // --- NEW: Timer to handle the countdown for the next life ---
   void _startLifeRegenTimer() {
     _lifeRegenTimer?.cancel();
     if (_lives >= _maxLives) {
@@ -137,7 +127,7 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
         final remaining = nextLifeTime - now;
 
         if (remaining <= 0) {
-          _loadAndCalculateLives(); // Recalculate to add the life
+          _loadAndCalculateLives();
         } else {
           if (mounted) {
             setState(() => _timeUntilNextLife = Duration(milliseconds: remaining));
@@ -155,7 +145,6 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
     setState(() {
       _currentLevel = level;
       final currentLevelData = wordGuessLevels[level];
-      // --- MODIFIED: Lives are now managed by the regen system, not reset here ---
       _wordToGuess = currentLevelData.word;
       _hint = currentLevelData.hint;
       _guessedLetters = [];
@@ -197,7 +186,6 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
       if (!_wordToGuess.contains(letter)) {
         _lives--;
         _wordShakeController.forward(from: 0.0);
-        // --- MODIFIED: Save state when a life is lost ---
         _saveLifeState(lifeWasLost: true);
       }
     });
@@ -217,16 +205,13 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
     });
   }
   
-  // --- NEW: Placeholder function for watching a rewarded ad ---
   void _watchAdForLives() {
-    Navigator.of(context).pop(); // Close the game over dialog
+    Navigator.of(context).pop();
     
-    // In a real app, you would integrate an ad SDK here.
-    // For this simulation, we'll just grant the lives.
     setState(() {
       _lives = min(_maxLives, _lives + 2);
     });
-    _saveLifeState(lifeWasLost: false); // Save the new life count
+    _saveLifeState(lifeWasLost: false); 
     
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('You received 2 extra lives!'), backgroundColor: Colors.green),
@@ -364,7 +349,7 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
   void _showThemedDialog({
     required String title,
     required String content,
-    required List<Widget> actions, // --- MODIFIED: Accept a list of actions ---
+    required List<Widget> actions,
     required IconData icon,
     required Color iconColor,
   }) {
@@ -391,7 +376,7 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
             ],
           ),
           content: Text(content, style: GoogleFonts.exo2(color: Colors.white70)),
-          actions: actions, // --- MODIFIED: Use the provided actions ---
+          actions: actions,
         ),
       ),
     );
@@ -420,20 +405,19 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
     );
   }
 
-  // --- MODIFIED: Game Over dialog now includes the rewarded ad option ---
   void _showGameOverDialog() {
     _showThemedDialog(
-      title: "Game Over",
-      content: "The word was: $_wordToGuess",
-      icon: Icons.dangerous,
+      title: "Out of Lives!",
+      content: "Watch an ad to get 2 more lives, or wait for them to regenerate.",
+      // --- FIXED: Replaced incorrect icon name ---
+      icon: Icons.heart_broken,
       iconColor: Colors.redAccent,
       actions: [
         TextButton(
           onPressed: () {
             Navigator.of(context).pop();
-            _startLevel(_currentLevel);
           },
-          child: Text("Try Again", style: GoogleFonts.orbitron(color: Colors.white70)),
+          child: Text("Close", style: GoogleFonts.orbitron(color: Colors.white70)),
         ),
         ElevatedButton.icon(
           onPressed: _watchAdForLives,
@@ -459,7 +443,7 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
          ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              Navigator.of(context).pop(); // Go back to games list
+              Navigator.of(context).pop();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.amber,
@@ -494,7 +478,6 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text("Level ${_currentLevel + 1}", style: GoogleFonts.exo2(fontSize: 18, color: Colors.white70)),
-                  // --- MODIFIED: Lives display and timer ---
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [

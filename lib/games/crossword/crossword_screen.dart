@@ -98,10 +98,6 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
     super.dispose();
   }
 
-  // ... rest of the crossword_screen.dart file is the same as the last version I provided.
-  // The only necessary change was in _initializeState and the more robust data file.
-  // For completeness, here is the rest of the file...
-
   void _onCellTapped(int r, int c) {
     if (_cellToWordsMap['$r-$c'] == null) return;
     final wordsInCell = _cellToWordsMap['$r-$c']!;
@@ -109,10 +105,10 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
 
     final acrossWord = wordsInCell.firstWhere(
         (w) => w.direction == CrosswordDirection.across,
-        orElse: () => CrosswordWord(id: -1, direction: CrosswordDirection.across, word: "", hint: "", startRow: -1, startCol: -1));
+        orElse: () => const CrosswordWord(id: -1, direction: CrosswordDirection.across, word: "", hint: "", startRow: -1, startCol: -1));
     final downWord = wordsInCell.firstWhere(
         (w) => w.direction == CrosswordDirection.down,
-        orElse: () => CrosswordWord(id: -1, direction: CrosswordDirection.down, word: "", hint: "", startRow: -1, startCol: -1));
+        orElse: () => const CrosswordWord(id: -1, direction: CrosswordDirection.down, word: "", hint: "", startRow: -1, startCol: -1));
 
     setState(() {
       _incorrectCells.clear();
