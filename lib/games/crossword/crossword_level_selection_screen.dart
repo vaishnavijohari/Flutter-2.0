@@ -35,75 +35,104 @@ class _CrosswordLevelSelectionScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text("Select a Puzzle", style: GoogleFonts.orbitron()),
+        title: Text("Select a Puzzle",
+            style:
+                GoogleFonts.orbitron(textStyle: const TextStyle(color: Colors.white))),
         elevation: 0,
         backgroundColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4, // Changed to 4 for better spacing
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF2C3E50), Color(0xFF000000)], // Darker, blackish gradient
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
         ),
-        itemCount: allCrosswordPuzzles.length,
-        itemBuilder: (context, index) {
-          final isLocked = index > _highestLevelUnlocked;
-          final isCurrent = index == _highestLevelUnlocked;
+        child: GridView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 100, 16, 16), // Adjust padding for app bar
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+          ),
+          itemCount: allCrosswordPuzzles.length,
+          itemBuilder: (context, index) {
+            final isLocked = index > _highestLevelUnlocked;
+            final isCurrent = index == _highestLevelUnlocked;
 
-          return InkWell(
-            onTap: isLocked
-                ? null
-                : () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CrosswordScreen(
-                            puzzle: allCrosswordPuzzles[index],
-                            levelIndex: index),
-                      ),
-                    ).then((_) {
-                      _loadProgress();
-                    });
-                  },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              decoration: BoxDecoration(
-                color: isLocked
-                    ? Colors.grey.shade800
-                    : isCurrent
-                        ? Theme.of(context).primaryColor.withOpacity(0.9)
-                        : Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(12),
-                border: isCurrent
-                    ? Border.all(
-                        color: Theme.of(context).primaryColorLight, width: 2)
-                    : Border.all(color: Colors.grey.shade700),
-                boxShadow: [
-                  if (!isLocked)
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(4, 4),
-                    ),
-                ],
-              ),
-              child: Center(
-                child: isLocked
-                    ? Icon(Icons.lock, color: Colors.grey.shade400, size: 30)
-                    : Text(
-                        "${index + 1}",
-                        style: GoogleFonts.orbitron(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: isCurrent ? Colors.white : null,
+            return InkWell(
+              onTap: isLocked
+                  ? null
+                  : () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CrosswordScreen(
+                              puzzle: allCrosswordPuzzles[index],
+                              levelIndex: index),
                         ),
+                      ).then((_) {
+                        _loadProgress();
+                      });
+                    },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  // --- FIXED: Replaced deprecated withOpacity ---
+                  color: isLocked
+                      ? Colors.black.withAlpha((255 * 0.4).round())
+                      : isCurrent
+                          // --- FIXED: Replaced deprecated withOpacity ---
+                          ? const Color(0xFFf50057).withAlpha((255 * 0.9).round())
+                          // --- FIXED: Replaced deprecated withOpacity ---
+                          : Colors.black.withAlpha((255 * 0.2).round()),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isLocked
+                        ? Colors.grey.shade700
+                        : isCurrent
+                            ? const Color(0xFFff4081)
+                            : Colors.grey.shade800,
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    if (!isLocked)
+                      BoxShadow(
+                        // --- FIXED: Replaced deprecated withOpacity ---
+                        color: Colors.black.withAlpha((255 * 0.5).round()),
+                        blurRadius: 8,
+                        offset: const Offset(4, 4),
                       ),
+                  ],
+                ),
+                child: Center(
+                  child: isLocked
+                      ? Icon(Icons.lock,
+                          color: Colors.grey.shade600, size: 30)
+                      : Text(
+                          "${index + 1}",
+                          style: GoogleFonts.orbitron(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            shadows: [
+                              const Shadow(
+                                blurRadius: 10.0,
+                                color: Colors.black,
+                                offset: Offset(2.0, 2.0),
+                              ),
+                            ],
+                          ),
+                        ),
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

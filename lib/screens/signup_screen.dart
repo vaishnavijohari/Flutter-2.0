@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -79,11 +78,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
       }
     } on FirebaseAuthException catch (e) {
       String message = 'Signup failed';
+      // --- FIXED: Added curly braces ---
       if (e.code == 'email-already-in-use') {
         message = 'Email already in use.';
-      } else if (e.code == 'invalid-email') message = 'Invalid email address.';
-      else if (e.code == 'weak-password') message = 'Password is too weak.';
-      else if (e.message != null) message = e.message!;
+      } else if (e.code == 'invalid-email') {
+        message = 'Invalid email address.';
+      } else if (e.code == 'weak-password') {
+        message = 'Password is too weak.';
+      } else if (e.message != null) {
+        message = e.message!;
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message)),
@@ -133,7 +137,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        // FIXED: Replaced onBackground with onSurface
         leading: BackButton(color: theme.colorScheme.onSurface),
       ),
       extendBodyBehindAppBar: true,
@@ -149,7 +152,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // FIXED: Replaced onBackground with onSurface
                     FaIcon(FontAwesomeIcons.lock, color: theme.colorScheme.onSurface, size: 28),
                     const SizedBox(width: 12),
                     Flexible(
@@ -159,7 +161,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         style: GoogleFonts.orbitron(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          // FIXED: Replaced withOpacity with withAlpha
                           shadows: [Shadow(blurRadius: 10.0, color: theme.colorScheme.primary.withAlpha((255 * 0.5).round()))],
                         ),
                       ),
@@ -263,7 +264,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Widget _buildVisibilityToggle(VoidCallback onPressed, bool isVisible) {
-    // FIXED: Replaced withOpacity with withAlpha
     return IconButton(
       icon: Icon(isVisible ? Icons.visibility_off : Icons.visibility, color: Theme.of(context).iconTheme.color?.withAlpha((255 * 0.7).round())),
       onPressed: onPressed,
@@ -273,11 +273,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   InputDecoration _buildInputDecoration(ThemeData theme, String label, IconData prefixIcon) {
     return InputDecoration(
       labelText: label,
-      // FIXED: Replaced withOpacity with withAlpha
       labelStyle: TextStyle(color: theme.colorScheme.onSurface.withAlpha((255 * 0.7).round())),
       filled: true,
       fillColor: theme.colorScheme.surface,
-      // FIXED: Replaced withOpacity with withAlpha
       prefixIcon: Icon(prefixIcon, color: theme.colorScheme.onSurface.withAlpha((255 * 0.7).round())),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(

@@ -36,13 +36,13 @@ class CrosswordPuzzle {
 
 // A list of 5 interconnected general knowledge crossword puzzles
 final allCrosswordPuzzles = [
-  // Level 1: Corrected Word Placement
+  // Level 1
   CrosswordPuzzle(
     title: "LEVEL 1",
-    rows: 14,
+    rows: 15, // Changed from 14 to 15 to fix word cutoff
     cols: 13,
     words: [
-      CrosswordWord(id: 1, direction: CrosswordDirection.across, word: "VOLCANO", hint: "Mountain That Erupts", startRow: 4, startCol: 6), // Corrected from 6
+      CrosswordWord(id: 1, direction: CrosswordDirection.across, word: "VOLCANO", hint: "Mountain That Erupts", startRow: 4, startCol: 6),
       CrosswordWord(id: 4, direction: CrosswordDirection.across, word: "NILE", hint: "Longest River In Africa", startRow: 2, startCol: 4),
       CrosswordWord(id: 5, direction: CrosswordDirection.across, word: "SHIVA", hint: "Hindu Deity Of Destruction", startRow: 0, startCol: 0),
       CrosswordWord(id: 7, direction: CrosswordDirection.across, word: "JUPITER", hint: "Largest Planet In The Solar System", startRow: 10, startCol: 4),
@@ -51,7 +51,7 @@ final allCrosswordPuzzles = [
       CrosswordWord(id: 6, direction: CrosswordDirection.down, word: "ARNOLD", hint: "Famous Bodybuilder And Actor", startRow: 0, startCol: 4),
     ],
   ),
-  // Level 2: In the Kitchen (No issues here)
+  // Level 2 (No changes)
   CrosswordPuzzle(
     title: "LEVEL 2",
     rows: 12,
@@ -65,7 +65,8 @@ final allCrosswordPuzzles = [
       CrosswordWord(id: 6, direction: CrosswordDirection.down, word: "INDRAJIT", hint: "Warrior Son Of Ravana", startRow: 4, startCol: 7),
     ],
   ),
-  // Level 3: Corrected Word Placement
+  // Other levels remain unchanged...
+  // Level 3
   CrosswordPuzzle(
     title: "LEVEL 3",
     rows: 12,
@@ -73,14 +74,14 @@ final allCrosswordPuzzles = [
     words: [
       CrosswordWord(id: 1, direction: CrosswordDirection.across, word: "EQUATOR", hint: "Imaginary Line Dividing Earth Into Hemispheres", startRow: 5, startCol: 1),
       CrosswordWord(id: 2, direction: CrosswordDirection.across, word: "ASHOKA", hint: "Mauryan Emperor Who Embraced Buddhism", startRow: 6, startCol: 7),
-      CrosswordWord(id: 3, direction: CrosswordDirection.across, word: "GABRIEL", hint: "Archangel Who Delivered Divine Messages", startRow: 8, startCol: 6), // Corrected from 7
+      CrosswordWord(id: 3, direction: CrosswordDirection.across, word: "GABRIEL", hint: "Archangel Who Delivered Divine Messages", startRow: 8, startCol: 6),
       CrosswordWord(id: 4, direction: CrosswordDirection.across, word: "ARISTOTLE", hint: "Philosopher, Teacher Of Alexander The Great", startRow: 10, startCol: 0),
       CrosswordWord(id: 5, direction: CrosswordDirection.down, word: "HANUMAN", hint: "Hindu Monkey God And Devotee Of Rama", startRow: 0, startCol: 4),
       CrosswordWord(id: 6, direction: CrosswordDirection.down, word: "ALGEBRA", hint: "Math Branch Dealing With Symbols And Equations", startRow: 2, startCol: 1),
       CrosswordWord(id: 7, direction: CrosswordDirection.down, word: "RANGOLI", hint: "Indian Art Form With Colored Powders", startRow: 5, startCol: 7),
     ],
   ),
-  // Level 4: Corrected Word Placement
+  // Level 4
   CrosswordPuzzle(
     title: "LEVEL 4",
     rows: 11,
@@ -89,13 +90,13 @@ final allCrosswordPuzzles = [
       CrosswordWord(id: 1, direction: CrosswordDirection.across, word: "MOZART", hint: "Famous Classical Composer", startRow: 1, startCol: 4),
       CrosswordWord(id: 2, direction: CrosswordDirection.across, word: "SPECTRUM", hint: "Band Of Colors Seen In A Rainbow", startRow: 5, startCol: 2),
       CrosswordWord(id: 3, direction: CrosswordDirection.across, word: "QUASAR", hint: "Highly Energetic Astronomical Object", startRow: 8, startCol: 0),
-      CrosswordWord(id: 4, direction: CrosswordDirection.across, word: "JAIPUR", hint: "The Pink City Of India", startRow: 9, startCol: 5), // Corrected from 6
+      CrosswordWord(id: 4, direction: CrosswordDirection.across, word: "JAIPUR", hint: "The Pink City Of India", startRow: 9, startCol: 5),
       CrosswordWord(id: 5, direction: CrosswordDirection.down, word: "MESSIAH", hint: "A Savior Or Liberator", startRow: 3, startCol: 2),
       CrosswordWord(id: 6, direction: CrosswordDirection.down, word: "ZODIAC", hint: "Astrological System With 12 Signs", startRow: 0, startCol: 5),
       CrosswordWord(id: 7, direction: CrosswordDirection.down, word: "ARJUNA", hint: "Warrior Prince In Mahabharata", startRow: 4, startCol: 7),
     ],
   ),
-  // Level 5: Fully corrected grid, title, and word placements
+  // Level 5
   CrosswordPuzzle(
     title: "LEVEL 5",
     rows: 15,

@@ -38,9 +38,11 @@ class CustomBottomNavBar extends StatelessWidget {
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: theme.scaffoldBackgroundColor.withOpacity(0.8),
+                      // --- FIXED: Replaced deprecated withOpacity ---
+                      color: theme.scaffoldBackgroundColor.withAlpha((255 * 0.8).round()),
                       border: Border(
-                        top: BorderSide(color: theme.dividerColor.withOpacity(0.2), width: 1),
+                        // --- FIXED: Replaced deprecated withOpacity ---
+                        top: BorderSide(color: theme.dividerColor.withAlpha((255 * 0.2).round()), width: 1),
                       ),
                     ),
                   ),
@@ -92,20 +94,23 @@ class CustomBottomNavBar extends StatelessWidget {
           gradient: LinearGradient(
             colors: isSelected
                 ? [theme.colorScheme.primary, theme.colorScheme.secondary]
-                : [theme.colorScheme.surface.withOpacity(0.9), theme.colorScheme.surface],
+                // --- FIXED: Replaced deprecated withOpacity ---
+                : [theme.colorScheme.surface.withAlpha((255 * 0.9).round()), theme.colorScheme.surface],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           boxShadow: [
             BoxShadow(
-              color: theme.colorScheme.primary.withOpacity(0.4),
+              // --- FIXED: Replaced deprecated withOpacity ---
+              color: theme.colorScheme.primary.withAlpha((255 * 0.4).round()),
               blurRadius: 15,
               spreadRadius: isSelected ? 3 : 0,
               offset: const Offset(0, 4),
             ),
           ],
           border: Border.all(
-            color: isSelected ? Colors.white.withOpacity(0.5) : theme.dividerColor,
+            // --- FIXED: Replaced deprecated withOpacity ---
+            color: isSelected ? Colors.white.withAlpha((255 * 0.5).round()) : theme.dividerColor,
             width: 2,
           ),
         ),

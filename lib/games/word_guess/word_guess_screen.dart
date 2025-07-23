@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'word_guess_data.dart';
+// --- FIXED: Corrected the import path for the background widget ---
+import '../../widgets/games/game_background.dart';
 
 class WordGuessScreen extends StatefulWidget {
   const WordGuessScreen({super.key});
@@ -38,14 +40,12 @@ class _WordGuessScreenState extends State<WordGuessScreen> {
       _wordToGuess = currentLevelData.word;
       _hint = currentLevelData.hint;
       _guessedLetters = [];
-      // --- MODIFIED: Use custom keyboard if available, otherwise generate one ---
       _keyboardLetters = currentLevelData.keyboardLetters ?? _generateKeyboardLetters(_wordToGuess);
     });
   }
 
-  // MODIFIED: This is now a fallback method for levels without a custom keyboard
   List<String> _generateKeyboardLetters(String word, {int totalLetters = 8}) {
-    List<String> letters = word.toUpperCase().split('').toSet().toList(); // Use Set to get unique letters
+    List<String> letters = word.toUpperCase().split('').toSet().toList();
     String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     Random random = Random();
     while (letters.length < totalLetters) {
@@ -93,21 +93,22 @@ class _WordGuessScreenState extends State<WordGuessScreen> {
           width: 40,
           height: 50,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            // --- FIXED: Replaced deprecated withOpacity ---
+            color: Colors.black.withAlpha((255 * 0.2).round()),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Theme.of(context).dividerColor),
+            // --- FIXED: Replaced deprecated withOpacity ---
+            border: Border.all(color: Colors.white.withAlpha((255 * 0.3).round())),
           ),
           alignment: Alignment.center,
           child: Text(
             isGuessed ? char : '',
-            style: GoogleFonts.orbitron(fontSize: 24, fontWeight: FontWeight.bold),
+            style: GoogleFonts.orbitron(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
           ),
         );
       }).toList(),
     );
   }
 
-  // --- MODIFIED: Replaced GridView with a more flexible Wrap widget ---
   Widget _buildKeyboard() {
     return Wrap(
       spacing: 10,
@@ -125,11 +126,15 @@ class _WordGuessScreenState extends State<WordGuessScreen> {
             decoration: BoxDecoration(
               color: isGuessed
                   ? (isCorrect ? Colors.green.shade700 : Colors.red.shade700)
-                  : Theme.of(context).cardColor,
+                  // --- FIXED: Replaced deprecated withOpacity ---
+                  : Colors.black.withAlpha((255 * 0.3).round()),
               borderRadius: BorderRadius.circular(12),
+              // --- FIXED: Replaced deprecated withOpacity ---
+              border: Border.all(color: Colors.white.withAlpha((255 * 0.2).round())),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  // --- FIXED: Replaced deprecated withOpacity ---
+                  color: Colors.black.withAlpha((255 * 0.2).round()),
                   blurRadius: 5,
                   offset: const Offset(0, 2),
                 )
@@ -141,7 +146,7 @@ class _WordGuessScreenState extends State<WordGuessScreen> {
               style: GoogleFonts.exo2(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: isGuessed ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
+                color: Colors.white,
               ),
             ),
           ),
@@ -149,113 +154,122 @@ class _WordGuessScreenState extends State<WordGuessScreen> {
       }).toList(),
     );
   }
-
-  void _showLevelCompleteDialog() {
-    showDialog(
+  
+  void _showThemedDialog({required String title, required String content, required VoidCallback onConfirm, required String confirmText}) {
+     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text("Level Complete!", style: GoogleFonts.orbitron()),
-        content: Text("You guessed the word: $_wordToGuess"),
+        // --- FIXED: Replaced deprecated withOpacity ---
+        backgroundColor: const Color(0xFF1A222C).withAlpha((255 * 0.9).round()),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          // --- FIXED: Replaced deprecated withOpacity ---
+          side: BorderSide(color: Colors.cyanAccent.withAlpha((255 * 0.5).round()))
+        ),
+        title: Text(title, style: GoogleFonts.orbitron(color: Colors.white)),
+        content: Text(content, style: GoogleFonts.exo2(color: Colors.white70)),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _startLevel(_currentLevel + 1);
-            },
-            child: const Text("Next Level"),
+            onPressed: onConfirm,
+            child: Text(confirmText, style: GoogleFonts.orbitron(color: Colors.cyanAccent, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
+    );
+  }
+
+  void _showLevelCompleteDialog() {
+    _showThemedDialog(
+      title: "Level Complete!",
+      content: "You guessed the word: $_wordToGuess",
+      confirmText: "Next Level",
+      onConfirm: () {
+        Navigator.of(context).pop();
+        _startLevel(_currentLevel + 1);
+      }
     );
   }
 
   void _showGameOverDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text("Game Over", style: GoogleFonts.orbitron()),
-        content: Text("The word was: $_wordToGuess"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _startLevel(_currentLevel);
-            },
-            child: const Text("Try Again"),
-          ),
-        ],
-      ),
+    _showThemedDialog(
+      title: "Game Over",
+      content: "The word was: $_wordToGuess",
+      confirmText: "Try Again",
+      onConfirm: () {
+        Navigator.of(context).pop();
+        _startLevel(_currentLevel);
+      }
     );
   }
   
   void _showGameWonDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text("Congratulations!", style: GoogleFonts.orbitron()),
-        content: const Text("You have completed all the levels!"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pop(); // Go back to games list
-            },
-            child: const Text("Awesome!"),
-          ),
-        ],
-      ),
+     _showThemedDialog(
+      title: "Congratulations!",
+      content: "You have completed all the levels!",
+      confirmText: "Awesome!",
+      onConfirm: () {
+        Navigator.of(context).pop();
+        Navigator.of(context).pop(); // Go back to games list
+      }
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('Guess the Word', style: GoogleFonts.orbitron()),
+        title: Text('Guess the Word', style: GoogleFonts.orbitron(color: Colors.white)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Level ${_currentLevel + 1}", style: GoogleFonts.exo2(fontSize: 18)),
-                Row(
-                  children: List.generate(5, (index) {
-                    return Icon(
-                      index < _lives ? Icons.favorite : Icons.favorite_border,
-                      color: Colors.red,
-                    );
-                  }),
+      body: GameBackground(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 120, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Level ${_currentLevel + 1}", style: GoogleFonts.exo2(fontSize: 18, color: Colors.white70)),
+                  Row(
+                    children: List.generate(5, (index) {
+                      return Icon(
+                        index < _lives ? Icons.favorite : Icons.favorite_border,
+                        color: Colors.redAccent,
+                        shadows: const [Shadow(color: Colors.black, blurRadius: 2)],
+                      );
+                    }),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  // --- FIXED: Replaced deprecated withOpacity ---
+                  color: Colors.black.withAlpha((255 * 0.25).round()),
+                  borderRadius: BorderRadius.circular(10),
+                  // --- FIXED: Replaced deprecated withOpacity ---
+                  border: Border.all(color: Colors.white.withAlpha((255 * 0.1).round())),
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(10),
+                child: Text(
+                  "Hint: $_hint",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.exo2(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.white),
+                ),
               ),
-              child: Text(
-                "Hint: $_hint",
-                textAlign: TextAlign.center,
-                style: GoogleFonts.exo2(fontSize: 16, fontStyle: FontStyle.italic),
-              ),
-            ),
-            const SizedBox(height: 30),
-            _buildWordDisplay(),
-            const SizedBox(height: 40),
-            _buildKeyboard(),
-          ],
+              const SizedBox(height: 30),
+              _buildWordDisplay(),
+              const SizedBox(height: 40),
+              _buildKeyboard(),
+            ],
+          ),
         ),
       ),
     );

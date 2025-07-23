@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -52,10 +51,14 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } on FirebaseAuthException catch (e) {
       String message = 'Login failed';
+      // --- FIXED: Added curly braces for better practice ---
       if (e.code == 'user-not-found') {
         message = 'No user found for that email.';
-      } else if (e.code == 'wrong-password') message = 'Wrong password provided.';
-      else if (e.message != null) message = e.message!;
+      } else if (e.code == 'wrong-password') {
+        message = 'Wrong password provided.';
+      } else if (e.message != null) {
+        message = e.message!;
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message)),
@@ -113,7 +116,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // FIXED: Replaced onBackground with onSurface
                     FaIcon(FontAwesomeIcons.lockOpen, color: theme.colorScheme.onSurface, size: 28),
                     const SizedBox(width: 12),
                     Flexible(
@@ -123,7 +125,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: GoogleFonts.orbitron(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          // FIXED: Replaced withOpacity with withAlpha
                           shadows: [Shadow(blurRadius: 10.0, color: theme.colorScheme.primary.withAlpha((255 * 0.5).round()))],
                         ),
                       ),
@@ -151,7 +152,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: !_isPasswordVisible,
                   decoration: _buildInputDecoration(theme, "Password", Icons.lock_outline).copyWith(
                     suffixIcon: IconButton(
-                      // FIXED: Replaced withOpacity with withAlpha
                       icon: Icon(_isPasswordVisible ? Icons.visibility_off : Icons.visibility, color: theme.iconTheme.color?.withAlpha((255 * 0.7).round())),
                       onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                     ),
@@ -209,11 +209,9 @@ class _LoginScreenState extends State<LoginScreen> {
   InputDecoration _buildInputDecoration(ThemeData theme, String label, IconData prefixIcon) {
     return InputDecoration(
       labelText: label,
-      // FIXED: Replaced withOpacity with withAlpha
       labelStyle: TextStyle(color: theme.colorScheme.onSurface.withAlpha((255 * 0.7).round())),
       filled: true,
       fillColor: theme.colorScheme.surface,
-      // FIXED: Replaced withOpacity with withAlpha
       prefixIcon: Icon(prefixIcon, color: theme.colorScheme.onSurface.withAlpha((255 * 0.7).round())),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(

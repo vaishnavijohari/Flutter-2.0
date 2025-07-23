@@ -31,7 +31,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     String? storedUsername = prefs.getString('username');
 
-    // --- FIXED: Check for null before checking if empty ---
     if (storedUsername == null || storedUsername.isEmpty) {
       storedUsername = 'Reader${Random().nextInt(9000) + 1000}';
       await prefs.setString('username', storedUsername);
@@ -66,7 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final newUsernameController = TextEditingController();
     final formKey = GlobalKey<FormState>();
     
-    if (!mounted) return;
+    // It's safe to use context here because there's no await before it.
     final theme = Theme.of(context);
 
     final bool? wasUsernameChanged = await showDialog<bool>(
@@ -95,6 +94,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.setString('username', newUsername);
                 await prefs.setInt('lastUsernameChange', DateTime.now().millisecondsSinceEpoch);
+                
+                if (!mounted) return;
                 Navigator.pop(dialogContext, true);
               }
             },
@@ -116,6 +117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _showLogoutDialog() async {
+    // Guarding context use before the async gap
     if (!mounted) return;
     final theme = Theme.of(context);
     final bool? confirmed = await showDialog<bool>(
@@ -139,6 +141,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     if (confirmed == true) {
+      // No context is used after this await, so it's safe.
       await _logout();
     }
   }
@@ -147,6 +150,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
 
+    // Guarding context use after the await
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -174,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    if (confirmed == true && mounted) {
+    if (confirmed == true) {
       await _logout();
     }
   }
