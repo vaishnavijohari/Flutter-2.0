@@ -45,6 +45,9 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _usernameController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      // Set isLoggedIn to true after successful login
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -79,6 +82,9 @@ class _LoginScreenState extends State<LoginScreen> {
         idToken: googleAuth.idToken,
       );
       await FirebaseAuth.instance.signInWithCredential(credential);
+      // Set isLoggedIn to true after successful Google sign-in
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
