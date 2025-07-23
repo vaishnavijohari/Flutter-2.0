@@ -19,7 +19,7 @@ class StoryRepository {
       List<FirebaseStory> allStories = await _storyService.getAllStoriesDebug();
       print('--- All Published Stories ---');
       List<FirebaseStory> publishedStories = allStories.where((s) => s.status == 'published').toList();
-      print('Total published stories: ${publishedStories.length}');
+      print('Total published stories:  [32m [1m${publishedStories.length} [0m');
       
       // Fetch newly added stories from Firebase
       List<FirebaseStory> firebaseNewlyAdded = await _storyService.getNewlyAddedStories(limit: 5);
@@ -27,13 +27,19 @@ class StoryRepository {
       print('Newly added stories: ${firebaseNewlyAdded.length}');
       List<Story> newlyAdded = firebaseNewlyAdded.map((fs) => fs.toLegacyStory()).toList();
 
-      // Fetch trending stories (using recently updated as trending)
-      List<FirebaseStory> firebaseTrendingStories = await _storyService.getTrendingStories(limit: 9); // 3 for each period
-      print('--- Trending Stories ---');
-      print('Trending stories: ${firebaseTrendingStories.length}');
-      
-      // Split trending stories into daily, weekly, monthly (mock division for now)
-      List<TrendingStory> daily = firebaseTrendingStories.take(3).map((fs) => 
+      // Time filtering for trending
+      final now = DateTime.now();
+      final dailyStories = publishedStories.where((s) => now.difference(s.updatedAt).inHours < 24).toList();
+      final weeklyStories = publishedStories.where((s) => now.difference(s.updatedAt).inDays < 7).toList();
+      final monthlyStories = publishedStories.where((s) => now.difference(s.updatedAt).inDays < 30).toList();
+
+      // Sort by updatedAt descending
+      dailyStories.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      weeklyStories.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      monthlyStories.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+      // Map to TrendingStory (limit to 3 for each section)
+      List<TrendingStory> daily = dailyStories.take(3).map((fs) => 
         TrendingStory(
           id: fs.id,
           coverImageUrl: fs.coverImage.isNotEmpty ? fs.coverImage : 'https://via.placeholder.com/150x220?text=${fs.title.replaceAll(' ', '+').substring(0, 8)}',
@@ -42,7 +48,7 @@ class StoryRepository {
         )
       ).toList();
 
-      List<TrendingStory> weekly = firebaseTrendingStories.skip(3).take(3).map((fs) => 
+      List<TrendingStory> weekly = weeklyStories.take(3).map((fs) => 
         TrendingStory(
           id: fs.id,
           coverImageUrl: fs.coverImage.isNotEmpty ? fs.coverImage : 'https://via.placeholder.com/150x220?text=${fs.title.replaceAll(' ', '+').substring(0, 8)}',
@@ -51,7 +57,7 @@ class StoryRepository {
         )
       ).toList();
 
-      List<TrendingStory> monthly = firebaseTrendingStories.skip(6).take(3).map((fs) => 
+      List<TrendingStory> monthly = monthlyStories.take(3).map((fs) => 
         TrendingStory(
           id: fs.id,
           coverImageUrl: fs.coverImage.isNotEmpty ? fs.coverImage : 'https://via.placeholder.com/150x220?text=${fs.title.replaceAll(' ', '+').substring(0, 8)}',
@@ -61,12 +67,13 @@ class StoryRepository {
       ).toList();
 
       // Create latest updates from recently updated stories
-      List<LatestUpdate> updates = firebaseTrendingStories.take(10).map((fs) => 
+      List<FirebaseStory> updatesSource = publishedStories.toList()..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      List<LatestUpdate> updates = updatesSource.take(10).map((fs) => 
         LatestUpdate(
           id: fs.id,
           coverImageUrl: fs.coverImage.isNotEmpty ? fs.coverImage : 'https://via.placeholder.com/150x220?text=${fs.title.replaceAll(' ', '+').substring(0, 8)}',
           title: fs.title,
-          chapter: 'Chapter ${fs.chapterCount}',
+          chapter: 'Chapter  [36m${fs.chapterCount} [0m',
           time: _getTimeAgo(fs.updatedAt),
         )
       ).toList();
