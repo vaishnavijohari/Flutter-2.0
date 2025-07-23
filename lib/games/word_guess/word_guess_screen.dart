@@ -1,8 +1,10 @@
 // lib/games/word_guess/word_guess_screen.dart
 
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'word_guess_data.dart';
 import '../../widgets/games/game_background.dart';
 
@@ -13,25 +15,30 @@ class WordGuessScreen extends StatefulWidget {
   State<WordGuessScreen> createState() => _WordGuessScreenState();
 }
 
-// --- MODIFIED: Added TickerProviderStateMixin for animations ---
 class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderStateMixin {
+  // --- MODIFIED: Game constants for lives ---
+  static const int _maxLives = 3;
+  static const Duration _lifeRegenDuration = Duration(minutes: 10);
+
   int _currentLevel = 0;
-  int _lives = 5;
+  int _lives = _maxLives;
   late String _wordToGuess;
   late String _hint;
   late List<String> _guessedLetters;
   late List<String> _keyboardLetters;
 
-  // --- NEW: Animation Controllers ---
   late AnimationController _wordShakeController;
   late Animation<double> _wordShakeAnimation;
   late List<AnimationController> _keyPressControllers;
   late AnimationController _levelStartController;
 
+  // --- NEW: Timer for life regeneration ---
+  Timer? _lifeRegenTimer;
+  Duration? _timeUntilNextLife;
+
   @override
   void initState() {
     super.initState();
-    // --- NEW: Initialize Animation Controllers ---
     _wordShakeController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
@@ -46,18 +53,98 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
     _levelStartController = AnimationController(
         duration: const Duration(milliseconds: 800), vsync: this);
 
+    _initializeGame();
+  }
+  
+  // --- NEW: Central method to initialize or reset the game ---
+  Future<void> _initializeGame() async {
+    await _loadAndCalculateLives();
     _startLevel(_currentLevel);
   }
 
   @override
   void dispose() {
-    // --- NEW: Dispose all controllers ---
     _wordShakeController.dispose();
     _levelStartController.dispose();
     for (var controller in _keyPressControllers) {
       controller.dispose();
     }
+    // --- NEW: Cancel the timer ---
+    _lifeRegenTimer?.cancel();
     super.dispose();
+  }
+
+  // --- NEW: Load lives from storage and calculate regeneration ---
+  Future<void> _loadAndCalculateLives() async {
+    final prefs = await SharedPreferences.getInstance();
+    int savedLives = prefs.getInt('wordguess_lives') ?? _maxLives;
+    int lastLostTimestamp = prefs.getInt('wordguess_lastLostTimestamp') ?? 0;
+
+    if (savedLives < _maxLives && lastLostTimestamp > 0) {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final timeSinceLastLoss = Duration(milliseconds: now - lastLostTimestamp);
+      
+      if (timeSinceLastLoss >= _lifeRegenDuration) {
+        int livesRegenerated = timeSinceLastLoss.inMinutes ~/ _lifeRegenDuration.inMinutes;
+        savedLives = min(_maxLives, savedLives + livesRegenerated);
+        
+        // If lives are fully regenerated, clear the timestamp
+        if (savedLives == _maxLives) {
+          await prefs.remove('wordguess_lastLostTimestamp');
+        } else {
+          // Otherwise, update the timestamp to the last regeneration time
+          final newTimestamp = lastLostTimestamp + (livesRegenerated * _lifeRegenDuration.inMilliseconds);
+          await prefs.setInt('wordguess_lastLostTimestamp', newTimestamp);
+        }
+      }
+    }
+    
+    if (mounted) {
+      setState(() {
+        _lives = savedLives;
+      });
+      await prefs.setInt('wordguess_lives', _lives);
+      _startLifeRegenTimer();
+    }
+  }
+
+  // --- NEW: Save the current state of lives to persistent storage ---
+  Future<void> _saveLifeState({required bool lifeWasLost}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('wordguess_lives', _lives);
+    if (lifeWasLost && _lives < _maxLives) {
+      // Only set a new timestamp if a life was just lost and we're not full
+      await prefs.setInt('wordguess_lastLostTimestamp', DateTime.now().millisecondsSinceEpoch);
+    }
+    _startLifeRegenTimer();
+  }
+
+  // --- NEW: Timer to handle the countdown for the next life ---
+  void _startLifeRegenTimer() {
+    _lifeRegenTimer?.cancel();
+    if (_lives >= _maxLives) {
+      setState(() => _timeUntilNextLife = null);
+      return;
+    }
+
+    SharedPreferences.getInstance().then((prefs) {
+      final lastLostTimestamp = prefs.getInt('wordguess_lastLostTimestamp') ?? 0;
+      if (lastLostTimestamp == 0) return;
+
+      _lifeRegenTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        final now = DateTime.now().millisecondsSinceEpoch;
+        final nextLifeTime = lastLostTimestamp + _lifeRegenDuration.inMilliseconds;
+        final remaining = nextLifeTime - now;
+
+        if (remaining <= 0) {
+          _loadAndCalculateLives(); // Recalculate to add the life
+        } else {
+          if (mounted) {
+            setState(() => _timeUntilNextLife = Duration(milliseconds: remaining));
+          }
+        }
+      });
+    });
   }
 
   void _startLevel(int level) {
@@ -68,13 +155,12 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
     setState(() {
       _currentLevel = level;
       final currentLevelData = wordGuessLevels[level];
-      _lives = 5;
+      // --- MODIFIED: Lives are now managed by the regen system, not reset here ---
       _wordToGuess = currentLevelData.word;
       _hint = currentLevelData.hint;
       _guessedLetters = [];
       _keyboardLetters = currentLevelData.keyboardLetters ?? _generateKeyboardLetters(_wordToGuess);
 
-      // --- NEW: Setup key press animations for the new level ---
       _keyPressControllers = List.generate(
         _keyboardLetters.length,
         (index) => AnimationController(
@@ -83,7 +169,6 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
         ),
       );
       
-      // --- NEW: Start the level entrance animation ---
       _levelStartController.forward(from: 0.0);
     });
   }
@@ -103,17 +188,17 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
   }
 
   void _handleGuess(String letter, int keyIndex) {
-    if (_guessedLetters.contains(letter)) return;
+    if (_guessedLetters.contains(letter) || _lives <= 0) return;
     
-    // --- NEW: Trigger key press animation ---
     _keyPressControllers[keyIndex].forward().then((_) => _keyPressControllers[keyIndex].reverse());
 
     setState(() {
       _guessedLetters.add(letter);
       if (!_wordToGuess.contains(letter)) {
         _lives--;
-        // --- NEW: Trigger shake animation on wrong guess ---
         _wordShakeController.forward(from: 0.0);
+        // --- MODIFIED: Save state when a life is lost ---
+        _saveLifeState(lifeWasLost: true);
       }
     });
 
@@ -121,7 +206,6 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
   }
 
   void _checkGameState() {
-    // Use a short delay to allow animations to play
     Future.delayed(const Duration(milliseconds: 300), () {
       if (!mounted) return;
       bool wordGuessed = _wordToGuess.split('').every((char) => _guessedLetters.contains(char));
@@ -132,8 +216,22 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
       }
     });
   }
-
-  // --- MODIFIED: All build methods updated for animation and style ---
+  
+  // --- NEW: Placeholder function for watching a rewarded ad ---
+  void _watchAdForLives() {
+    Navigator.of(context).pop(); // Close the game over dialog
+    
+    // In a real app, you would integrate an ad SDK here.
+    // For this simulation, we'll just grant the lives.
+    setState(() {
+      _lives = min(_maxLives, _lives + 2);
+    });
+    _saveLifeState(lifeWasLost: false); // Save the new life count
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('You received 2 extra lives!'), backgroundColor: Colors.green),
+    );
+  }
 
   Widget _buildWordDisplay() {
     return AnimatedBuilder(
@@ -266,8 +364,7 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
   void _showThemedDialog({
     required String title,
     required String content,
-    required VoidCallback onConfirm,
-    required String confirmText,
+    required List<Widget> actions, // --- MODIFIED: Accept a list of actions ---
     required IconData icon,
     required Color iconColor,
   }) {
@@ -294,17 +391,7 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
             ],
           ),
           content: Text(content, style: GoogleFonts.exo2(color: Colors.white70)),
-          actions: [
-            ElevatedButton(
-              onPressed: onConfirm,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: iconColor,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
-              ),
-              child: Text(confirmText, style: GoogleFonts.orbitron(fontWeight: FontWeight.bold)),
-            ),
-          ],
+          actions: actions, // --- MODIFIED: Use the provided actions ---
         ),
       ),
     );
@@ -314,27 +401,51 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
     _showThemedDialog(
       title: "Level Complete!",
       content: "You guessed the word: $_wordToGuess",
-      confirmText: "Next Level",
       icon: Icons.check_circle,
       iconColor: Colors.greenAccent,
-      onConfirm: () {
-        Navigator.of(context).pop();
-        _startLevel(_currentLevel + 1);
-      }
+      actions: [
+        ElevatedButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            _startLevel(_currentLevel + 1);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.greenAccent,
+            foregroundColor: Colors.black,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+          ),
+          child: Text("Next Level", style: GoogleFonts.orbitron(fontWeight: FontWeight.bold)),
+        ),
+      ]
     );
   }
 
+  // --- MODIFIED: Game Over dialog now includes the rewarded ad option ---
   void _showGameOverDialog() {
     _showThemedDialog(
       title: "Game Over",
       content: "The word was: $_wordToGuess",
-      confirmText: "Try Again",
       icon: Icons.dangerous,
       iconColor: Colors.redAccent,
-      onConfirm: () {
-        Navigator.of(context).pop();
-        _startLevel(_currentLevel);
-      }
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            _startLevel(_currentLevel);
+          },
+          child: Text("Try Again", style: GoogleFonts.orbitron(color: Colors.white70)),
+        ),
+        ElevatedButton.icon(
+          onPressed: _watchAdForLives,
+          icon: const Icon(Icons.slow_motion_video),
+          label: Text("Watch Ad (+2 Lives)", style: GoogleFonts.orbitron(fontWeight: FontWeight.bold)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blueAccent,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+          ),
+        ),
+      ]
     );
   }
   
@@ -342,13 +453,22 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
      _showThemedDialog(
       title: "VICTORY!",
       content: "You have completed all the levels!",
-      confirmText: "Awesome!",
       icon: Icons.emoji_events,
       iconColor: Colors.amber,
-      onConfirm: () {
-        Navigator.of(context).pop();
-        Navigator.of(context).pop(); // Go back to games list
-      }
+      actions: [
+         ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pop(); // Go back to games list
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+            ),
+            child: Text("Awesome!", style: GoogleFonts.orbitron(fontWeight: FontWeight.bold)),
+          ),
+      ]
     );
   }
 
@@ -374,22 +494,36 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text("Level ${_currentLevel + 1}", style: GoogleFonts.exo2(fontSize: 18, color: Colors.white70)),
-                  Row(
-                    children: List.generate(5, (index) {
-                      return AnimatedScale(
-                        scale: _lives > index ? 1.0 : 0.8,
-                        duration: const Duration(milliseconds: 200),
-                        child: AnimatedOpacity(
-                          opacity: _lives > index ? 1.0 : 0.5,
-                          duration: const Duration(milliseconds: 200),
-                          child: Icon(
-                            _lives > index ? Icons.favorite : Icons.favorite_border,
-                            color: Colors.redAccent,
-                            shadows: const [Shadow(color: Colors.black, blurRadius: 4, offset: Offset(1,1))],
+                  // --- MODIFIED: Lives display and timer ---
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Row(
+                        children: List.generate(_maxLives, (index) {
+                          return AnimatedScale(
+                            scale: _lives > index ? 1.0 : 0.8,
+                            duration: const Duration(milliseconds: 200),
+                            child: AnimatedOpacity(
+                              opacity: _lives > index ? 1.0 : 0.5,
+                              duration: const Duration(milliseconds: 200),
+                              child: Icon(
+                                _lives > index ? Icons.favorite : Icons.favorite_border,
+                                color: Colors.redAccent,
+                                shadows: const [Shadow(color: Colors.black, blurRadius: 4, offset: Offset(1,1))],
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                      if (_timeUntilNextLife != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Text(
+                            'Next in: ${_timeUntilNextLife!.inMinutes}:${(_timeUntilNextLife!.inSeconds % 60).toString().padLeft(2, '0')}',
+                            style: GoogleFonts.orbitron(fontSize: 12, color: Colors.cyanAccent),
                           ),
                         ),
-                      );
-                    }),
+                    ],
                   ),
                 ],
               ),
