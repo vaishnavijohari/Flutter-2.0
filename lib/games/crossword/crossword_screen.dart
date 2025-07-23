@@ -1,4 +1,4 @@
-// lib/games/crossword/crossword_screen.dart
+// 📄 lib/games/crossword/crossword_screen.dart
 
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -6,8 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'crossword_data.dart';
-// --- FIXED: Corrected the import path for the background widget ---
 import '../../widgets/games/game_background.dart';
+
+// Constants for better maintainability and to avoid magic strings.
+class _CrosswordConstants {
+  static const String highestLevelPrefKey = 'crossword_highest_level_unlocked';
+  static const Duration animationDuration = Duration(milliseconds: 300);
+  static const double cellSpacing = 2.0;
+}
 
 class CrosswordScreen extends StatefulWidget {
   final CrosswordPuzzle puzzle;
@@ -24,9 +30,11 @@ class CrosswordScreen extends StatefulWidget {
 }
 
 class _CrosswordScreenState extends State<CrosswordScreen> {
+  // State variables
   late List<List<TextEditingController>> _controllers;
   late List<List<FocusNode>> _focusNodes;
   late Map<String, int> _cellNumbers;
+  late Map<String, List<CrosswordWord>> _cellToWordsMap;
 
   CrosswordWord? _selectedAcrossWord;
   CrosswordWord? _selectedDownWord;
@@ -38,15 +46,40 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeState();
+  }
+
+  void _initializeState() {
     final puzzle = widget.puzzle;
+    if (puzzle.rows <= 0 || puzzle.cols <= 0) {
+      // Handle case with no words or invalid dimensions
+      _controllers = [];
+      _focusNodes = [];
+      _cellNumbers = {};
+      _cellToWordsMap = {};
+      return;
+    }
     _controllers = List.generate(
         puzzle.rows, (r) => List.generate(puzzle.cols, (c) => TextEditingController()));
     _focusNodes = List.generate(
         puzzle.rows, (r) => List.generate(puzzle.cols, (c) => FocusNode()));
     _cellNumbers = {};
+    _cellToWordsMap = {
+      for (int r = 0; r < puzzle.rows; r++)
+        for (int c = 0; c < puzzle.cols; c++) '$r-$c': []
+    };
 
-    for (var word in puzzle.words) {
+    for (final word in puzzle.words) {
       _cellNumbers['${word.startRow}-${word.startCol}'] = word.id;
+      for (int i = 0; i < word.word.length; i++) {
+        final r = word.direction == CrosswordDirection.down ? word.startRow + i : word.startRow;
+        final c = word.direction == CrosswordDirection.across ? word.startCol + i : word.startCol;
+        
+        /// ✅ **DEFINITIVE FIX**: Added robust boundary checks here.
+        if (r >= 0 && r < puzzle.rows && c >= 0 && c < puzzle.cols) {
+          _cellToWordsMap['$r-$c']?.add(word);
+        }
+      }
     }
   }
 
@@ -65,94 +98,95 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
     super.dispose();
   }
 
+  // ... rest of the crossword_screen.dart file is the same as the last version I provided.
+  // The only necessary change was in _initializeState and the more robust data file.
+  // For completeness, here is the rest of the file...
+
   void _onCellTapped(int r, int c) {
-    var acrossWord = widget.puzzle.words.firstWhere(
-        (w) =>
-            w.direction == CrosswordDirection.across &&
-            w.startRow == r &&
-            c >= w.startCol &&
-            c < w.startCol + w.word.length,
+    if (_cellToWordsMap['$r-$c'] == null) return;
+    final wordsInCell = _cellToWordsMap['$r-$c']!;
+    if (wordsInCell.isEmpty) return;
+
+    final acrossWord = wordsInCell.firstWhere(
+        (w) => w.direction == CrosswordDirection.across,
         orElse: () => CrosswordWord(id: -1, direction: CrosswordDirection.across, word: "", hint: "", startRow: -1, startCol: -1));
-    var downWord = widget.puzzle.words.firstWhere(
-        (w) =>
-            w.direction == CrosswordDirection.down &&
-            w.startCol == c &&
-            r >= w.startRow &&
-            r < w.startRow + w.word.length,
+    final downWord = wordsInCell.firstWhere(
+        (w) => w.direction == CrosswordDirection.down,
         orElse: () => CrosswordWord(id: -1, direction: CrosswordDirection.down, word: "", hint: "", startRow: -1, startCol: -1));
 
     setState(() {
       _incorrectCells.clear();
-      if (acrossWord.id != -1 && downWord.id != -1) {
-        if (_selectedAcrossWord?.id == acrossWord.id && _selectedDownWord?.id == downWord.id) {
-          _activeDirection = _activeDirection == CrosswordDirection.across ? CrosswordDirection.down : CrosswordDirection.across;
-        } else {
-          _activeDirection = CrosswordDirection.across;
-        }
-        _selectedAcrossWord = acrossWord;
-        _selectedDownWord = downWord;
-      } else if (acrossWord.id != -1) {
-        _selectedAcrossWord = acrossWord;
-        _selectedDownWord = null;
-        _activeDirection = CrosswordDirection.across;
-      } else if (downWord.id != -1) {
-        _selectedDownWord = downWord;
-        _selectedAcrossWord = null;
-        _activeDirection = CrosswordDirection.down;
+      if (acrossWord.id != -1 &&
+          downWord.id != -1 &&
+          _selectedAcrossWord?.id == acrossWord.id &&
+          _selectedDownWord?.id == downWord.id) {
+        _activeDirection = _activeDirection == CrosswordDirection.across
+            ? CrosswordDirection.down
+            : CrosswordDirection.across;
       } else {
-        _selectedAcrossWord = null;
-        _selectedDownWord = null;
+        _activeDirection =
+            acrossWord.id != -1 ? CrosswordDirection.across : CrosswordDirection.down;
       }
+      _selectedAcrossWord = acrossWord.id != -1 ? acrossWord : null;
+      _selectedDownWord = downWord.id != -1 ? downWord : null;
     });
-
-    if (_selectedAcrossWord != null || _selectedDownWord != null) {
+    if (_focusNodes.length > r && _focusNodes[r].length > c) {
       _focusNodes[r][c].requestFocus();
     }
   }
 
   Future<void> _submitAnswers() async {
-    bool isPuzzleCorrect = true;
-    final incorrectCellsTracker = <String>{};
-
-    for (var word in widget.puzzle.words) {
-      for (int i = 0; i < word.word.length; i++) {
-        int r = word.startRow, c = word.startCol;
-        if (word.direction == CrosswordDirection.across) {
-          c += i;
-        } else {
-          r += i;
-        }
-
-        final enteredChar = _controllers[r][c].text.toUpperCase();
-        final correctChar = word.word[i];
-
-        if (enteredChar != correctChar) {
-          isPuzzleCorrect = false;
-          incorrectCellsTracker.add('$r-$c');
-        } else {
-          _correctlyPlacedCells['$r-$c'] = true;
-        }
-      }
-    }
-
     setState(() {
       _incorrectCells.clear();
-      _incorrectCells.addAll(incorrectCellsTracker);
+      _correctlyPlacedCells.clear();
     });
 
-    if (isPuzzleCorrect) {
-      final prefs = await SharedPreferences.getInstance();
-      int highestLevelUnlocked =
-          prefs.getInt('crossword_highest_level_unlocked') ?? 0;
-      if (widget.levelIndex >= highestLevelUnlocked) {
-        await prefs.setInt(
-            'crossword_highest_level_unlocked', widget.levelIndex + 1);
+    bool isPuzzleFullyCorrect = true;
+    final newIncorrectCells = <String>{};
+    final newCorrectCells = <String>{};
+
+    _cellToWordsMap.forEach((cellKey, wordsInCell) {
+      if (wordsInCell.isEmpty) return;
+      final parts = cellKey.split('-');
+      final r = int.parse(parts[0]);
+      final c = int.parse(parts[1]);
+      if (r >= widget.puzzle.rows || c >= widget.puzzle.cols) return;
+      final enteredChar = _controllers[r][c].text.toUpperCase();
+      if (enteredChar.isEmpty) {
+        isPuzzleFullyCorrect = false;
+        return;
       }
+      bool isCellCorrect = true;
+      for (final word in wordsInCell) {
+        final charIndex = word.direction == CrosswordDirection.across
+            ? (c - word.startCol)
+            : (r - word.startRow);
+        if (charIndex < 0 || charIndex >= word.word.length || enteredChar != word.word[charIndex].toUpperCase()) {
+          isCellCorrect = false;
+          break;
+        }
+      }
+      if (isCellCorrect) {
+        newCorrectCells.add(cellKey);
+      } else {
+        newIncorrectCells.add(cellKey);
+        isPuzzleFullyCorrect = false;
+      }
+    });
 
+    setState(() {
+      _incorrectCells.addAll(newIncorrectCells);
+      _correctlyPlacedCells.addAll({ for (final k in newCorrectCells) k: true });
+    });
+
+    if (isPuzzleFullyCorrect) {
+      final prefs = await SharedPreferences.getInstance();
+      int highestLevelUnlocked = prefs.getInt(_CrosswordConstants.highestLevelPrefKey) ?? 0;
+      if (widget.levelIndex >= highestLevelUnlocked) {
+        await prefs.setInt(_CrosswordConstants.highestLevelPrefKey, widget.levelIndex + 1);
+      }
       if (!mounted) return;
-
       final isLastLevel = widget.levelIndex == allCrosswordPuzzles.length - 1;
-      
       _showThemedDialog(
         title: isLastLevel ? "Game Complete!" : "Congratulations!",
         content: isLastLevel
@@ -160,23 +194,21 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
             : "You solved the puzzle! Level ${widget.levelIndex + 2} is now unlocked.",
         confirmText: "Continue",
         onConfirm: () {
-          Navigator.of(context).pop(); // Close dialog
-          Navigator.of(context).pop(); // Go back to level selection
-        }
+          Navigator.of(context).pop();
+          Navigator.of(context).pop();
+        },
       );
     }
   }
   
   void _showThemedDialog({required String title, required String content, required VoidCallback onConfirm, required String confirmText}) {
-     showDialog(
+    showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        // --- FIXED: Replaced deprecated withOpacity ---
         backgroundColor: const Color(0xFF1A222C).withAlpha((255 * 0.9).round()),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
-          // --- FIXED: Replaced deprecated withOpacity ---
           side: BorderSide(color: Colors.cyanAccent.withAlpha((255 * 0.5).round()))
         ),
         title: Text(title, style: GoogleFonts.orbitron(color: Colors.white)),
@@ -191,38 +223,43 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
     );
   }
 
-  void _handleCharacterInput(String value, int r, int c) {
-    if (value.isEmpty) return;
+  void _onCharacterChanged(String value, int r, int c) {
     _controllers[r][c].text = value.toUpperCase();
-
-    CrosswordWord? activeWord = _activeDirection == CrosswordDirection.across ? _selectedAcrossWord : _selectedDownWord;
-
-    if (activeWord != null) {
-      int charIndex = (activeWord.direction == CrosswordDirection.across) ? (c - activeWord.startCol) : (r - activeWord.startRow);
-      if (charIndex >= 0 && charIndex < activeWord.word.length && value.toUpperCase() == activeWord.word[charIndex]) {
-        setState(() => _correctlyPlacedCells['$r-$c'] = true);
-      }
+    if (value.isNotEmpty) {
+      _moveFocus(r, c, forward: true);
+    } else {
+      _moveFocus(r, c, forward: false);
     }
+  }
 
-    if (_activeDirection == CrosswordDirection.across && c + 1 < widget.puzzle.cols) {
-        _focusNodes[r][c + 1].requestFocus();
-    } else if (_activeDirection == CrosswordDirection.down && r + 1 < widget.puzzle.rows) {
-        _focusNodes[r + 1][c].requestFocus();
+  void _moveFocus(int r, int c, {required bool forward}) {
+    final activeWord =
+        _activeDirection == CrosswordDirection.across ? _selectedAcrossWord : _selectedDownWord;
+    if (activeWord == null) return;
+    if (_activeDirection == CrosswordDirection.across) {
+      final nextCol = c + (forward ? 1 : -1);
+      if (nextCol >= activeWord.startCol && nextCol < activeWord.startCol + activeWord.word.length) {
+        _focusNodes[r][nextCol].requestFocus();
+      }
+    } else {
+      final nextRow = r + (forward ? 1 : -1);
+      if (nextRow >= activeWord.startRow && nextRow < activeWord.startRow + activeWord.word.length) {
+        _focusNodes[nextRow][c].requestFocus();
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool hasSelection = _selectedAcrossWord != null || _selectedDownWord != null;
-    
+    final hasSelection = _selectedAcrossWord != null || _selectedDownWord != null;
     return Scaffold(
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-          title: Text(widget.puzzle.title, style: GoogleFonts.orbitron(color: Colors.white)),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.white)),
+        title: Text(widget.puzzle.title, style: GoogleFonts.orbitron(color: Colors.white)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white)),
       body: GameBackground(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -239,19 +276,18 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
                         const SizedBox(height: 20),
                         AnimatedOpacity(
                           opacity: hasSelection ? 1.0 : 0.0,
-                          duration: const Duration(milliseconds: 400),
-                          child: hasSelection ? _buildHints() : const SizedBox(height: 140), // Placeholder to prevent layout jump
+                          duration: _CrosswordConstants.animationDuration,
+                          child: hasSelection ? _buildHints() : const SizedBox(height: 140),
                         ),
                         const SizedBox(height: 20),
-                        if (hasSelection)
-                          ElevatedButton(
-                            onPressed: _submitAnswers,
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFf50057),
-                                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
-                            child: Text('Submit', style: GoogleFonts.orbitron(fontSize: 16, color: Colors.white)),
-                          ),
+                        ElevatedButton(
+                          onPressed: _submitAnswers,
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFf50057),
+                              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+                          child: Text('Submit', style: GoogleFonts.orbitron(fontSize: 16, color: Colors.white)),
+                        ),
                       ],
                     ),
                   ),
@@ -266,52 +302,56 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
 
   Widget _buildGrid() {
     final screenWidth = MediaQuery.of(context).size.width;
-    final gridSize = screenWidth * 0.9;
-    final gridHeight = gridSize * (widget.puzzle.rows / widget.puzzle.cols);
+    final puzzle = widget.puzzle;
+
+    if (puzzle.rows == 0 || puzzle.cols == 0) return const SizedBox.shrink();
+
+    final double gridViewWidth = screenWidth * 0.9;
+    final double totalHorizontalSpacing = (puzzle.cols - 1) * _CrosswordConstants.cellSpacing;
+    final double cellSize = (gridViewWidth - totalHorizontalSpacing) / puzzle.cols;
+    final double totalVerticalSpacing = (puzzle.rows - 1) * _CrosswordConstants.cellSpacing;
+    final double gridViewHeight = (puzzle.rows * cellSize) + totalVerticalSpacing;
 
     return SizedBox(
-      width: gridSize,
-      height: gridHeight,
+      width: gridViewWidth,
+      height: gridViewHeight,
       child: GridView.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: widget.puzzle.cols),
-        itemCount: widget.puzzle.rows * widget.puzzle.cols,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: puzzle.cols,
+          mainAxisSpacing: _CrosswordConstants.cellSpacing,
+          crossAxisSpacing: _CrosswordConstants.cellSpacing,
+          childAspectRatio: 1.0,
+        ),
+        itemCount: puzzle.rows * puzzle.cols,
         physics: const NeverScrollableScrollPhysics(),
         itemBuilder: (context, index) {
-          int r = index ~/ widget.puzzle.cols;
-          int c = index % widget.puzzle.cols;
+          final r = index ~/ puzzle.cols;
+          final c = index % puzzle.cols;
+          final cellKey = '$r-$c';
 
-          var wordCells = widget.puzzle.words.where((w) =>
-              (w.direction == CrosswordDirection.across && w.startRow == r && c >= w.startCol && c < w.startCol + w.word.length) ||
-              (w.direction == CrosswordDirection.down && w.startCol == c && r >= w.startRow && r < w.startRow + w.word.length));
+          final wordsInCell = _cellToWordsMap[cellKey] ?? [];
+          if (wordsInCell.isEmpty) return Container();
 
-          if (wordCells.isEmpty) return Container();
+          final bool isPartOfAcross = _selectedAcrossWord != null && wordsInCell.any((w) => w.id == _selectedAcrossWord!.id);
+          final bool isPartOfDown = _selectedDownWord != null && wordsInCell.any((w) => w.id == _selectedDownWord!.id);
+          final bool isSelected = isPartOfAcross || isPartOfDown;
+          final bool isActive = (isPartOfAcross && _activeDirection == CrosswordDirection.across) ||
+              (isPartOfDown && _activeDirection == CrosswordDirection.down);
 
-          bool isPartOfAcross = _selectedAcrossWord != null && wordCells.any((w) => w.id == _selectedAcrossWord!.id);
-          bool isPartOfDown = _selectedDownWord != null && wordCells.any((w) => w.id == _selectedDownWord!.id);
-          bool isSelected = isPartOfAcross || isPartOfDown;
-
-          bool isActive = (isPartOfAcross && _activeDirection == CrosswordDirection.across) ||
-                          (isPartOfDown && _activeDirection == CrosswordDirection.down);
-
-          bool isIncorrect = _incorrectCells.contains('$r-$c');
-          bool isCorrect = _correctlyPlacedCells.containsKey('$r-$c');
-          int? number = _cellNumbers['$r-$c'];
+          final bool isIncorrect = _incorrectCells.contains(cellKey);
+          final bool isCorrect = _correctlyPlacedCells.containsKey(cellKey);
+          final int? number = _cellNumbers[cellKey];
 
           Color cellColor;
           if (isIncorrect) {
-            // --- FIXED: Replaced deprecated withOpacity ---
             cellColor = Colors.redAccent.withAlpha((255 * 0.5).round());
+          } else if (isCorrect) {
+            cellColor = Colors.greenAccent.withAlpha((255 * 0.4).round());
           } else if (isActive) {
-            // --- FIXED: Replaced deprecated withOpacity ---
             cellColor = Colors.cyanAccent.withAlpha((255 * 0.5).round());
           } else if (isSelected) {
-            // --- FIXED: Replaced deprecated withOpacity ---
             cellColor = Colors.cyanAccent.withAlpha((255 * 0.25).round());
-          } else if (isCorrect) {
-            // --- FIXED: Replaced deprecated withOpacity ---
-            cellColor = Colors.greenAccent.withAlpha((255 * 0.4).round());
           } else {
-            // --- FIXED: Replaced deprecated withOpacity ---
             cellColor = Colors.white.withAlpha((255 * 0.1).round());
           }
 
@@ -322,9 +362,8 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
+                  duration: _CrosswordConstants.animationDuration,
                   decoration: BoxDecoration(
-                    // --- FIXED: Replaced deprecated withOpacity ---
                     border: Border.all(color: Colors.white.withAlpha((255 * 0.2).round())),
                     color: cellColor,
                     borderRadius: BorderRadius.circular(4),
@@ -335,7 +374,6 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
                         Positioned(
                           top: 2,
                           left: 2,
-                          // --- FIXED: Replaced deprecated withOpacity ---
                           child: Text('$number', style: TextStyle(fontSize: 8, color: Colors.white.withAlpha((255 * 0.7).round()))),
                         ),
                       Center(
@@ -347,9 +385,14 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
                           textCapitalization: TextCapitalization.characters,
                           inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[a-zA-Z]'))],
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
-                          decoration: const InputDecoration(counterText: '', border: InputBorder.none, contentPadding: EdgeInsets.only(bottom: 8)),
+                          decoration: const InputDecoration(
+                            counterText: '',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                            isDense: true,
+                          ),
                           onTap: () => _onCellTapped(r, c),
-                          onChanged: (value) => _handleCharacterInput(value, r, c),
+                          onChanged: (value) => _onCharacterChanged(value, r, c),
                         ),
                       ),
                     ],
@@ -368,10 +411,8 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
       padding: const EdgeInsets.all(16),
       constraints: const BoxConstraints(minHeight: 140),
       decoration: BoxDecoration(
-        // --- FIXED: Replaced deprecated withOpacity ---
         color: Colors.black.withAlpha((255 * 0.25).round()),
         borderRadius: BorderRadius.circular(12),
-        // --- FIXED: Replaced deprecated withOpacity ---
         border: Border.all(color: Colors.white.withAlpha((255 * 0.1).round())),
       ),
       child: Column(
@@ -399,10 +440,9 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
   Widget _buildSingleHint(CrosswordWord word, CrosswordDirection direction, bool isActive) {
     String directionText = direction == CrosswordDirection.across ? "Across" : "Down";
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
+      duration: _CrosswordConstants.animationDuration,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        // --- FIXED: Replaced deprecated withOpacity ---
         color: isActive ? Colors.cyanAccent.withAlpha((255 * 0.15).round()) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
@@ -410,7 +450,6 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
         "${word.id}. $directionText: ${word.hint}",
         textAlign: TextAlign.center,
         style: TextStyle(
-          // --- FIXED: Replaced deprecated withOpacity ---
           color: isActive ? Colors.cyanAccent : Colors.white.withAlpha((255 * 0.8).round()),
           fontSize: 16,
           fontWeight: isActive ? FontWeight.bold : FontWeight.normal,

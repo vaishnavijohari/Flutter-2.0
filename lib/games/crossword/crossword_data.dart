@@ -1,5 +1,7 @@
 // lib/games/crossword/crossword_data.dart
 
+// import 'dart:math';
+
 enum CrosswordDirection { across, down }
 
 class CrosswordWord {
@@ -7,8 +9,8 @@ class CrosswordWord {
   final CrosswordDirection direction;
   final String word;
   final String hint;
-  final int startRow;
-  final int startCol;
+  int startRow;
+  int startCol;
 
   CrosswordWord({
     required this.id,
@@ -22,25 +24,92 @@ class CrosswordWord {
 
 class CrosswordPuzzle {
   final String title;
+  final List<CrosswordWord> words;
   final int rows;
   final int cols;
-  final List<CrosswordWord> words;
 
-  CrosswordPuzzle({
+  CrosswordPuzzle._({
     required this.title,
+    required this.words,
     required this.rows,
     required this.cols,
-    required this.words,
   });
+
+  factory CrosswordPuzzle({
+    required String title,
+    required List<CrosswordWord> words,
+  }) {
+    final wordList = List<CrosswordWord>.from(words);
+    _normalizeOffsets(wordList);
+    final int calculatedRows = _calculateRows(wordList);
+    final int calculatedCols = _calculateCols(wordList);
+
+    return CrosswordPuzzle._(
+      title: title,
+      words: wordList,
+      rows: calculatedRows,
+      cols: calculatedCols,
+    );
+  }
+
+  static void _normalizeOffsets(List<CrosswordWord> words) {
+    if (words.isEmpty) return;
+    int minRow = words.first.startRow;
+    int minCol = words.first.startCol;
+
+    for (final word in words) {
+      if (word.startRow < minRow) minRow = word.startRow;
+      if (word.startCol < minCol) minCol = word.startCol;
+    }
+
+    for (final word in words) {
+      word.startRow -= minRow;
+      word.startCol -= minCol;
+    }
+  }
+
+  /// ✅ **DEFINITIVE FIX**: Rewritten the calculation logic to be more explicit and clear.
+  static int _calculateRows(List<CrosswordWord> words) {
+    if (words.isEmpty) return 0;
+    int maxRow = 0;
+    for (final word in words) {
+      int currentMax = 0;
+      if (word.direction == CrosswordDirection.down) {
+        currentMax = word.startRow + word.word.length;
+      } else {
+        currentMax = word.startRow + 1;
+      }
+      if (currentMax > maxRow) {
+        maxRow = currentMax;
+      }
+    }
+    return maxRow;
+  }
+
+  /// ✅ **DEFINITIVE FIX**: Rewritten the calculation logic to be more explicit and clear.
+  static int _calculateCols(List<CrosswordWord> words) {
+    if (words.isEmpty) return 0;
+    int maxCol = 0;
+    for (final word in words) {
+      int currentMax = 0;
+      if (word.direction == CrosswordDirection.across) {
+        currentMax = word.startCol + word.word.length;
+      } else {
+        currentMax = word.startCol + 1;
+      }
+      if (currentMax > maxCol) {
+        maxCol = currentMax;
+      }
+    }
+    return maxCol;
+  }
 }
 
-// A list of 5 interconnected general knowledge crossword puzzles
+// Puzzle data remains the same
 final allCrosswordPuzzles = [
   // Level 1
   CrosswordPuzzle(
     title: "LEVEL 1",
-    rows: 15, // Changed from 14 to 15 to fix word cutoff
-    cols: 13,
     words: [
       CrosswordWord(id: 1, direction: CrosswordDirection.across, word: "VOLCANO", hint: "Mountain That Erupts", startRow: 4, startCol: 6),
       CrosswordWord(id: 4, direction: CrosswordDirection.across, word: "NILE", hint: "Longest River In Africa", startRow: 2, startCol: 4),
@@ -51,11 +120,9 @@ final allCrosswordPuzzles = [
       CrosswordWord(id: 6, direction: CrosswordDirection.down, word: "ARNOLD", hint: "Famous Bodybuilder And Actor", startRow: 0, startCol: 4),
     ],
   ),
-  // Level 2 (No changes)
+  // Level 2
   CrosswordPuzzle(
     title: "LEVEL 2",
-    rows: 12,
-    cols: 15,
     words: [
       CrosswordWord(id: 1, direction: CrosswordDirection.across, word: "GALAXY", hint: "Massive Star System", startRow: 2, startCol: 0),
       CrosswordWord(id: 2, direction: CrosswordDirection.across, word: "TRINITY", hint: "Group Of Three", startRow: 4, startCol: 3),
@@ -65,12 +132,9 @@ final allCrosswordPuzzles = [
       CrosswordWord(id: 6, direction: CrosswordDirection.down, word: "INDRAJIT", hint: "Warrior Son Of Ravana", startRow: 4, startCol: 7),
     ],
   ),
-  // Other levels remain unchanged...
   // Level 3
   CrosswordPuzzle(
     title: "LEVEL 3",
-    rows: 12,
-    cols: 13,
     words: [
       CrosswordWord(id: 1, direction: CrosswordDirection.across, word: "EQUATOR", hint: "Imaginary Line Dividing Earth Into Hemispheres", startRow: 5, startCol: 1),
       CrosswordWord(id: 2, direction: CrosswordDirection.across, word: "ASHOKA", hint: "Mauryan Emperor Who Embraced Buddhism", startRow: 6, startCol: 7),
@@ -84,8 +148,6 @@ final allCrosswordPuzzles = [
   // Level 4
   CrosswordPuzzle(
     title: "LEVEL 4",
-    rows: 11,
-    cols: 11,
     words: [
       CrosswordWord(id: 1, direction: CrosswordDirection.across, word: "MOZART", hint: "Famous Classical Composer", startRow: 1, startCol: 4),
       CrosswordWord(id: 2, direction: CrosswordDirection.across, word: "SPECTRUM", hint: "Band Of Colors Seen In A Rainbow", startRow: 5, startCol: 2),
@@ -99,8 +161,6 @@ final allCrosswordPuzzles = [
   // Level 5
   CrosswordPuzzle(
     title: "LEVEL 5",
-    rows: 15,
-    cols: 15,
     words: [
       CrosswordWord(id: 1, direction: CrosswordDirection.across, word: "SHAKESPEARE", hint: "Famous English Playwright", startRow: 8, startCol: 3),
       CrosswordWord(id: 2, direction: CrosswordDirection.across, word: "PLATO", hint: "Greek Philosopher, Student Of Socrates", startRow: 4, startCol: 1),

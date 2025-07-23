@@ -12,7 +12,7 @@ class WordGuessLevel {
   });
 }
 
-// A list of 50 levels for the game
+// A list of 70 levels for the game
 final wordGuessLevels = [
   // --- Example of a custom keyboard with 10 letters ---
   WordGuessLevel(
@@ -314,5 +314,126 @@ final wordGuessLevels = [
     hint: "A great sage who was once a king and became a revered Brahmin through penance",
     keyboardLetters: ["V", "I", "S", "H", "W", "A", "M", "T", "R", "B", "C", "Y", "L", "N", "O", "D"],
   ),
+
+  WordGuessLevel(
+    word: "SATORUGOJO",
+    hint: "The overwhelmingly powerful and charismatic jujutsu sorcerer from Jujutsu Kaisen",
+    keyboardLetters: ["O", "J", "M", "U", "G", "A", "C", "T", "L", "Z", "S", "V", "K", "R", "N", "Y"],
+  ),
+
+  WordGuessLevel(
+    word: "ALCHEMY",
+    hint: "A medieval forerunner of chemistry, concerned with transmuting base metals into gold",
+    keyboardLetters: ["H", "L", "C", "B", "E", "M", "K", "X", "N", "F", "Y", "A", "O", "U", "G", "I"],
+  ),
+
+  WordGuessLevel(
+    word: "SCORSESE",
+    hint: "Director of gritty crime films like Goodfellas and The Departed",
+    keyboardLetters: ["C", "O", "K", "R", "A", "F", "M", "E", "L", "S", "B", "D", "Y", "N", "U", "T"],
+  ),
+
+  WordGuessLevel(
+    word: "CATEBLANCHETT",
+    hint: "She has played both an elf queen (Galadriel) and Queen Elizabeth I",
+    keyboardLetters: ["H", "C", "L", "X", "T", "B", "Z", "N", "Y", "K", "M", "E", "R", "A", "G", "U"],
+  ),
+
+  WordGuessLevel(
+    word: "PANGONGTSO",
+    hint: "A stunning high-altitude lake in the Himalayas that stretches from India to China",
+    keyboardLetters: ["P", "T", "B", "S", "A", "M", "C", "X", "L", "N", "O", "R", "Y", "G", "H", "K"],
+  ),
+
+  WordGuessLevel(
+    word: "GHOSTINTHESHELL",
+    hint: "A cyberpunk anime that explores themes of identity and consciousness in a technologically advanced future",
+    keyboardLetters: ["H", "S", "O", "E", "C", "L", "N", "M", "T", "B", "I", "X", "R", "A", "G", "U"],
+  ),
+
+  WordGuessLevel(
+    word: "BLADERUNNER",
+    hint: "A sci-fi noir film questioning what it means to be human, featuring replicants",
+    keyboardLetters: ["R", "E", "A", "D", "U", "M", "C", "N", "T", "L", "X", "Y", "B", "G", "S", "O"],
+  ),
+
+  WordGuessLevel(
+    word: "GALAPAGOS",
+    hint: "The islands that inspired Charles Darwin's theory of evolution",
+    keyboardLetters: ["G", "O", "Z", "L", "Y", "M", "K", "S", "N", "C", "A", "F", "X", "P", "R", "E"],
+  ),
+
+  WordGuessLevel(
+    word: "SIMONEBILES",
+    hint: "The most decorated American gymnast, known for performing skills of incredible difficulty",
+    keyboardLetters: ["S", "B", "M", "N", "X", "C", "E", "I", "F", "T", "A", "G", "O", "U", "L", "R"],
+  ),
+
+  WordGuessLevel(
+    word: "TURING",
+    hint: "A British mathematician who cracked the Enigma code during WWII and is a father of computer science",
+    keyboardLetters: ["T", "U", "G", "K", "R", "I", "N", "O", "B", "A", "C", "F", "M", "L", "Y", "E"],
+  ),
+
+  WordGuessLevel(
+    word: "OPPENHEIMER",
+    hint: "The \"father of the atomic bomb\"",
+    keyboardLetters: ["K", "M", "H", "D", "I", "G", "U", "R", "T", "C", "O", "N", "P", "E", "B"],
+  ),
+
+  WordGuessLevel(
+    word: "KARNA",
+    hint: "The tragic, invincible warrior in the Mahabharata, son of the sun god Surya",
+    keyboardLetters: ["B", "A", "R", "G", "O", "C", "D", "K", "M", "H", "S", "E", "U", "N", "I"],
+  ),
+
+  WordGuessLevel(
+    word: "SPIKE SPIEGEL",
+    hint: "The impossibly cool, laid-back bounty hunter from Cowboy Bebop",
+    keyboardLetters: ["I", "C", "H", "A", "P", "T", "G", "E", "M", "K", "S", "U", "N", "O", "L"],
+  ),
+
+  WordGuessLevel(
+    word: "SCHRODINGER",
+    hint: "His famous thought experiment involves a cat that is simultaneously alive and dead",
+    keyboardLetters: ["C", "O", "G", "B", "H", "N", "A", "S", "E", "T", "U", "R", "D", "M", "I"],
+  ),
+
+  WordGuessLevel(
+    word: "MACHIAVELLI",
+    hint: "An Italian diplomat whose name is synonymous with cunning and political scheming",
+    keyboardLetters: ["L", "R", "V", "E", "C", "M", "A", "T", "U", "I", "S", "H", "D", "N", "B"],
+  ),
+
+  WordGuessLevel(
+    word: "PUSHPAKA",
+    hint: "Ravana's mythical flying chariot that could travel at the speed of mind",
+    keyboardLetters: ["N", "P", "O", "A", "U", "C", "T", "H", "B", "K", "E", "S", "D", "G", "I"],
+  ),
+
+  WordGuessLevel(
+    word: "JALLIKATTU",
+    hint: "A traditional bull-taming sport practiced in the Indian state of Tamil Nadu",
+    keyboardLetters: ["I", "L", "E", "B", "M", "N", "A", "T", "K", "J", "C", "U", "S", "O", "R"],
+  ),
+
+  WordGuessLevel(
+    word: "JUDAS",
+    hint: "The apostle who betrayed Jesus to the authorities for thirty pieces of silver",
+    keyboardLetters: ["O", "D", "A", "U", "J", "M", "N", "S", "R", "C", "L", "T", "E", "G", "B"],
+  ),
+
+  WordGuessLevel(
+    word: "ALHAMBRA",
+    hint: "A stunning palace and fortress of the Moorish rulers in Granada Spain",
+    keyboardLetters: ["E", "G", "S", "T", "M", "L", "R", "C", "A", "O", "U", "N", "D", "H", "B"],
+  ),
+
+  WordGuessLevel(
+    word: "EDWARD ELRIC",
+    hint: "The \"Fullmetal Alchemist\" who lost an arm and a leg in a failed attempt to resurrect his mother",
+    keyboardLetters: ["I", "A", "T", "R", "U", "O", "G", "C", "W", "E", "M", "N", "D", "L", "S"],
+  ),
+
 
 ];
