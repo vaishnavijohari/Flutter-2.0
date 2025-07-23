@@ -10,6 +10,7 @@ import '../services/crypto_api_service.dart';
 import 'article_list_screen.dart';
 import '../dummy_data.dart';
 import '../models.dart';
+import '../services/firebase_article_service.dart';
 
 class CryptoScreen extends StatefulWidget {
   const CryptoScreen({super.key});
@@ -24,7 +25,9 @@ class _CryptoScreenState extends State<CryptoScreen> {
   List<CryptoCurrency> _cryptoList = [];
   
   List<Article> _trendingArticles = [];
+  bool _isTrendingLoading = false;
   List<Article> _newlyAddedArticles = [];
+  bool _isNewlyAddedLoading = false;
   String _selectedTrendingCategory = 'Entertainment';
 
   final List<ArticleCategory> _articleCategories = [
@@ -38,33 +41,37 @@ class _CryptoScreenState extends State<CryptoScreen> {
   void initState() {
     super.initState();
     _fetchAllData();
+    _updateTrendingArticles(_selectedTrendingCategory); // Fetch initial trending articles
   }
 
   Future<void> _fetchAllData() async {
     if (_cryptoList.isEmpty) {
       setState(() => _isLoading = true);
     }
-    
+    setState(() {
+      _isNewlyAddedLoading = true;
+    });
     try {
       final apiService = context.read<CryptoApiService>();
       final prices = await apiService.getLiveCryptoPrices();
-      
       prices.sort((a, b) {
         if (a.symbol == 'BTC') return -1;
         if (b.symbol == 'BTC') return 1;
         return a.name.compareTo(b.name);
       });
 
-      final newlyAdded = MockData.getNewlyAddedArticles();
-      final trending = MockData.getTrendingArticles(_selectedTrendingCategory);
+      // Fetch newly added articles from Firestore
+      final articleService = ArticleService();
+      final firebaseArticles = await articleService.getPublishedArticles();
+      final newlyAdded = firebaseArticles.map((fa) => fa.toLegacyArticle()).toList();
 
       if (mounted) {
         setState(() {
           _cryptoList = prices;
           _newlyAddedArticles = newlyAdded;
-          _trendingArticles = trending;
           _isLoading = false;
           _errorMessage = null;
+          _isNewlyAddedLoading = false;
         });
       }
     } catch (e) {
@@ -72,16 +79,38 @@ class _CryptoScreenState extends State<CryptoScreen> {
         setState(() {
           _isLoading = false;
           _errorMessage = e.toString();
+          _isNewlyAddedLoading = false;
         });
       }
     }
   }
 
-  void _updateTrendingArticles(String category) {
+  void _updateTrendingArticles(String category) async {
     setState(() {
       _selectedTrendingCategory = category;
-      _trendingArticles = MockData.getTrendingArticles(category);
+      _isTrendingLoading = true;
     });
+    try {
+      final articleService = ArticleService();
+      final firebaseArticles = await articleService.getArticlesByCategory(category);
+      final articles = firebaseArticles.map((fa) => fa.toLegacyArticle()).toList();
+      if (mounted) {
+        setState(() {
+          _trendingArticles = articles;
+          _isTrendingLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _trendingArticles = [];
+          _isTrendingLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load trending articles: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -166,15 +195,17 @@ class _CryptoScreenState extends State<CryptoScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        ListView.builder(
-          itemCount: _trendingArticles.length,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemBuilder: (context, index) {
-            return _TrendingArticleListItem(article: _trendingArticles[index]);
-          },
-        ),
+        _isTrendingLoading
+            ? const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
+            : ListView.builder(
+                itemCount: _trendingArticles.length,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemBuilder: (context, index) {
+                  return _TrendingArticleListItem(article: _trendingArticles[index]);
+                },
+              ),
       ],
     );
   }
@@ -188,15 +219,17 @@ class _CryptoScreenState extends State<CryptoScreen> {
           child: Text('Newly Added', style: GoogleFonts.orbitron(fontSize: 20, fontWeight: FontWeight.bold)),
         ),
         const SizedBox(height: 16),
-        ListView.builder(
-          itemCount: _newlyAddedArticles.length,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemBuilder: (context, index) {
-            return _NewlyAddedArticleListItem(article: _newlyAddedArticles[index]);
-          },
-        ),
+        _isNewlyAddedLoading
+            ? const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
+            : ListView.builder(
+                itemCount: _newlyAddedArticles.length,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemBuilder: (context, index) {
+                  return _NewlyAddedArticleListItem(article: _newlyAddedArticles[index]);
+                },
+              ),
       ],
     );
   }
@@ -241,7 +274,40 @@ class _CryptoScreenState extends State<CryptoScreen> {
               childAspectRatio: 0.8,
             ),
             itemBuilder: (context, index) {
-              return ArticleCategoryCard(category: _articleCategories[index]);
+              final category = _articleCategories[index];
+              return GestureDetector(
+                onTap: () async {
+                  // Fetch articles from Firestore for the selected category
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => const Center(child: CircularProgressIndicator()),
+                  );
+                  try {
+                    final articleService = ArticleService();
+                    await articleService.getArticlesByCategory(category.name); // Optionally fetch here, but ArticleListScreen will fetch by categoryName
+                    if (mounted) {
+                      Navigator.pop(context); // Remove loading dialog
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ArticleListScreen(
+                            categoryName: category.name,
+                          ),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to load articles: $e')),
+                      );
+                    }
+                  }
+                },
+                child: ArticleCategoryCard(category: category),
+              );
             },
           ),
         ],
