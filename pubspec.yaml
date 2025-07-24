@@ -33,8 +33,7 @@ dependencies:
   # Social Logins
   google_sign_in: ^6.2.1
   flutter_facebook_auth: ^6.0.2
-  twitter_login: ^4.4.0
-
+  
   #Internet Connection
   connectivity_plus: ^6.0.3
 
