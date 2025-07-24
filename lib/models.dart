@@ -131,6 +131,7 @@ class FirebaseArticle {
   final DateTime updatedAt;
   final int wordCount;
   final String authorId;
+  final int views;
 
   FirebaseArticle({
     required this.id,
@@ -144,6 +145,7 @@ class FirebaseArticle {
     required this.updatedAt,
     required this.wordCount,
     required this.authorId,
+    this.views = 0,
   });
 
   factory FirebaseArticle.fromFirestore(DocumentSnapshot doc) {
@@ -176,6 +178,7 @@ class FirebaseArticle {
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
       wordCount: data['wordCount'] ?? 0,
       authorId: data['authorId'] ?? '',
+      views: data['views'] ?? 0,
     );
   }
 
@@ -191,6 +194,7 @@ class FirebaseArticle {
       'updatedAt': Timestamp.fromDate(updatedAt),
       'wordCount': wordCount,
       'authorId': authorId,
+      'views': views,
     };
   }
 
@@ -204,7 +208,7 @@ class FirebaseArticle {
       publishedDate: '${createdAt.day}/${createdAt.month}/${createdAt.year}',
       category: category,
       content: content,
-      views: 0,
+      views: views,
     );
   }
 }

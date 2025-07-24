@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models.dart';
 import '../dummy_data.dart'; // To fetch recommended articles
@@ -23,25 +24,41 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _incrementArticleViews();
     _fetchRecommendations();
   }
 
-  // --- NEW: Fetches and sets the recommended articles ---
-  Future<void> _fetchRecommendations() async {
-    // Get all articles from the same category
-    final allArticlesInCategory = MockData.getArticlesByCategory(widget.article.category);
-    
-    // Remove the current article from the list, shuffle, and take 3
-    final recommendations = allArticlesInCategory
-        .where((a) => a.id != widget.article.id)
-        .toList()
-          ..shuffle();
+  Future<void> _incrementArticleViews() async {
+    try {
+      final docRef = FirebaseFirestore.instance.collection('articles').doc(widget.article.id);
+      await docRef.update({'views': FieldValue.increment(1)});
+    } catch (e) {
+      // Optionally handle error
+    }
+  }
 
-    if (mounted) {
-      setState(() {
-        _recommendedArticles = recommendations.take(3).toList();
-        _isLoadingRecommendations = false;
-      });
+  // Fetches and sets the recommended articles from Firestore
+  Future<void> _fetchRecommendations() async {
+    try {
+      final querySnapshot = await FirebaseFirestore.instance.collection('articles').where('status', isEqualTo: 'Published').get();
+      final allArticles = querySnapshot.docs
+        .map((doc) => FirebaseArticle.fromFirestore(doc).toLegacyArticle())
+        .where((a) => a.id != widget.article.id)
+        .toList();
+      allArticles.shuffle();
+      if (mounted) {
+        setState(() {
+          _recommendedArticles = allArticles.take(3).toList();
+          _isLoadingRecommendations = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _recommendedArticles = [];
+          _isLoadingRecommendations = false;
+        });
+      }
     }
   }
 
@@ -132,7 +149,7 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'By ${widget.article.author} • ${widget.article.publishedDate}',
+                    'Views:  ${widget.article.views}',
                     style: GoogleFonts.exo2(
                       textStyle: theme.textTheme.bodyMedium,
                       color: theme.textTheme.bodySmall?.color,

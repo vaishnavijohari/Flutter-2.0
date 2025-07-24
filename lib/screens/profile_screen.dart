@@ -256,44 +256,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
       elevation: 0,
       color: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: _showChangeUsernameDialog,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: theme.colorScheme.primaryContainer,
-                child: Text(
-                  _username.isNotEmpty ? _username[0].toUpperCase() : 'R',
-                  style: GoogleFonts.orbitron(fontSize: 24, color: theme.colorScheme.onPrimaryContainer),
-                ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 30,
+              backgroundColor: theme.colorScheme.primaryContainer,
+              child: Text(
+                _username.isNotEmpty ? _username[0].toUpperCase() : 'R',
+                style: GoogleFonts.orbitron(fontSize: 24, color: theme.colorScheme.onPrimaryContainer),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hi, $_username 👋',
-                      style: GoogleFonts.orbitron(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Hi, $_username 👋',
+                    style: GoogleFonts.orbitron(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
-                    Text(
-                      'Tap to change your username',
-                      style: GoogleFonts.exo2(color: theme.textTheme.bodySmall?.color),
-                    ),
-                  ],
-                ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  // Removed subtitle about username change
+                ],
               ),
-              Icon(Icons.edit_outlined, color: theme.textTheme.bodySmall?.color),
-            ],
-          ),
+            ),
+            // Removed edit icon and tap handler
+          ],
         ),
       ),
     );

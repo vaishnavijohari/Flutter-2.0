@@ -11,6 +11,7 @@ import 'article_list_screen.dart';
 import '../dummy_data.dart';
 import '../models.dart';
 import '../services/firebase_article_service.dart';
+import 'article_detail_screen.dart';
 
 class CryptoScreen extends StatefulWidget {
   const CryptoScreen({super.key});
@@ -94,6 +95,7 @@ class _CryptoScreenState extends State<CryptoScreen> {
       final articleService = ArticleService();
       final firebaseArticles = await articleService.getArticlesByCategory(category);
       final articles = firebaseArticles.map((fa) => fa.toLegacyArticle()).toList();
+      articles.sort((a, b) => b.views.compareTo(a.views));
       if (mounted) {
         setState(() {
           _trendingArticles = articles;
@@ -362,52 +364,25 @@ class _TrendingArticleListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () { /* Navigate to article detail */ },
-        borderRadius: BorderRadius.circular(12),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ArticleDetailScreen(article: article),
+          ),
+        );
+      },
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  article.imageUrl,
-                  width: 80, height: 80, fit: BoxFit.cover,
-                  errorBuilder: (c, e, s) => Container(width: 80, height: 80, color: theme.scaffoldBackgroundColor),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      article.title,
-                      style: GoogleFonts.exo2(fontWeight: FontWeight.bold, fontSize: 15),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(Icons.visibility, size: 14, color: theme.textTheme.bodySmall?.color),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${NumberFormat.compact().format(article.views)} Views',
-                          style: GoogleFonts.exo2(fontSize: 12, color: theme.textTheme.bodySmall?.color),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              Text(article.title, style: GoogleFonts.exo2(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text('Views: ${article.views}', style: GoogleFonts.exo2(fontSize: 12)),
             ],
           ),
         ),
@@ -422,46 +397,25 @@ class _NewlyAddedArticleListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () { /* Navigate to article detail */ },
-        borderRadius: BorderRadius.circular(12),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ArticleDetailScreen(article: article),
+          ),
+        );
+      },
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  article.imageUrl,
-                  width: 80, height: 80, fit: BoxFit.cover,
-                  errorBuilder: (c, e, s) => Container(width: 80, height: 80, color: theme.scaffoldBackgroundColor),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      article.title,
-                      style: GoogleFonts.exo2(fontWeight: FontWeight.bold, fontSize: 15),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      article.category,
-                      style: GoogleFonts.exo2(fontSize: 12, color: theme.textTheme.bodySmall?.color),
-                    ),
-                  ],
-                ),
-              ),
+              Text(article.title, style: GoogleFonts.exo2(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text('Views: ${article.views}', style: GoogleFonts.exo2(fontSize: 12)),
             ],
           ),
         ),
