@@ -1,3 +1,5 @@
+// lib/screens/stories_screen.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -125,20 +127,17 @@ class _StoriesScreenState extends State<StoriesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      // --- MODIFIED: Added a consistent AppBar ---
+      appBar: AppBar(
+        title: Text('Stories', style: GoogleFonts.orbitron(fontSize: 22, fontWeight: FontWeight.bold)),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Column(
             children: [
-              Text(
-                "Fabula",
-                style: GoogleFonts.orbitron(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary
-                ),
-              ),
+              // --- DELETED: The old "Fabula" text header is removed ---
               const SizedBox(height: 16),
               _buildSearchBar(),
               const SizedBox(height: 16),
@@ -194,7 +193,6 @@ class _StoriesScreenState extends State<StoriesScreen> {
 
   Widget _buildSearchBar() {
     final theme = Theme.of(context);
-    // FIXED: Replaced withOpacity with withAlpha
     final hintColor = theme.colorScheme.onSurface.withAlpha((255 * 0.5).round());
 
     return TextField(
@@ -205,7 +203,7 @@ class _StoriesScreenState extends State<StoriesScreen> {
         hintStyle: TextStyle(color: hintColor),
         prefixIcon: Icon(Icons.search, color: hintColor),
         filled: true,
-        fillColor: theme.colorScheme.surface,
+        fillColor: theme.cardColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -248,7 +246,7 @@ class _StoriesScreenState extends State<StoriesScreen> {
         }
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? theme.colorScheme.primary : theme.colorScheme.surface,
+        backgroundColor: isSelected ? theme.colorScheme.primary : theme.cardColor,
         foregroundColor: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -259,7 +257,7 @@ class _StoriesScreenState extends State<StoriesScreen> {
   
   Widget _buildGridShimmer() {
     final theme = Theme.of(context);
-    final placeholderColor = theme.colorScheme.surface;
+    final placeholderColor = theme.cardColor;
     
     return Shimmer.fromColors(
       baseColor: theme.brightness == Brightness.dark ? Colors.grey[900]! : Colors.grey[200]!,

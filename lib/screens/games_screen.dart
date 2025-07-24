@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../games/word_guess/word_guess_screen.dart';
 import '../games/crossword/crossword_level_selection_screen.dart';
-import '../widgets/games/game_background.dart'; // <-- MODIFIED: Import the new background widget
+import '../widgets/games/game_background.dart';
 
 class GameInfo {
   final String title;
@@ -40,19 +40,18 @@ class GamesScreen extends StatelessWidget {
       ),
     ];
 
-    // --- MODIFIED: The entire screen is updated for a consistent gaming theme ---
     return Scaffold(
-      backgroundColor: Colors.transparent, // Use transparent to let the GameBackground show
-      extendBodyBehindAppBar: true, // Let the background go behind the app bar
+      backgroundColor: Colors.transparent, 
+      extendBodyBehindAppBar: true, 
       appBar: AppBar(
-        title: Text('Games', style: GoogleFonts.orbitron(fontWeight: FontWeight.bold, color: Colors.white)),
+        // --- MODIFIED: Header style updated to match HomeScreen ---
+        title: Text('Games', style: GoogleFonts.orbitron(fontSize: 22, fontWeight: FontWeight.bold)),
         centerTitle: true,
-        backgroundColor: Colors.transparent, // Make AppBar transparent
+        backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: GameBackground(
         child: ListView.builder(
-          // Add padding to account for the transparent app bar
           padding: const EdgeInsets.fromLTRB(16, 120, 16, 16),
           itemCount: games.length,
           itemBuilder: (context, index) {
@@ -60,14 +59,11 @@ class GamesScreen extends StatelessWidget {
             return Card(
               margin: const EdgeInsets.only(bottom: 16),
               elevation: 4,
-              // --- FIXED: Replaced deprecated withOpacity ---
-              color: Colors.black.withAlpha((255 * 0.3).round()), // Dark, translucent card color
-              // --- FIXED: Replaced deprecated withOpacity ---
+              color: Colors.black.withAlpha((255 * 0.3).round()), 
               shadowColor: Colors.black.withAlpha((255 * 0.2).round()),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15),
-                // --- FIXED: Replaced deprecated withOpacity ---
-                side: BorderSide(color: Colors.white.withAlpha((255 * 0.2).round())) // Subtle border
+                side: BorderSide(color: Colors.white.withAlpha((255 * 0.2).round()))
               ),
               child: InkWell(
                 borderRadius: BorderRadius.circular(15),
@@ -81,7 +77,7 @@ class GamesScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(20.0),
                   child: Row(
                     children: [
-                      Icon(game.icon, size: 40, color: Colors.cyanAccent), // Brighter icon color
+                      Icon(game.icon, size: 40, color: Colors.cyanAccent),
                       const SizedBox(width: 20),
                       Expanded(
                         child: Column(
@@ -94,13 +90,11 @@ class GamesScreen extends StatelessWidget {
                             const SizedBox(height: 4),
                             Text(
                               game.description,
-                              // --- FIXED: Replaced deprecated withOpacity ---
                               style: TextStyle(color: Colors.white.withAlpha((255 * 0.7).round())),
                             ),
                           ],
                         ),
                       ),
-                      // --- FIXED: Replaced deprecated withOpacity ---
                       Icon(Icons.arrow_forward_ios_rounded, color: Colors.white.withAlpha((255 * 0.7).round())),
                     ],
                   ),

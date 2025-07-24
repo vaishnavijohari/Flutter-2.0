@@ -1,3 +1,5 @@
+// lib/screens/crypto_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -87,7 +89,6 @@ class _CryptoScreenState extends State<CryptoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         onRefresh: _fetchAllData,
         color: Theme.of(context).colorScheme.primary,
@@ -106,9 +107,10 @@ class _CryptoScreenState extends State<CryptoScreen> {
         SliverAppBar(
           title: Text('Finance', style: GoogleFonts.orbitron(fontSize: 22, fontWeight: FontWeight.bold)),
           centerTitle: true,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          elevation: 0,
           pinned: true,
+          // --- MODIFIED: Added a background color to make it opaque ---
+          backgroundColor: const Color(0xFF2C3E50),
+          elevation: 0,
         ),
         SliverToBoxAdapter(
           child: Column(
@@ -300,7 +302,7 @@ class _TrendingArticleListItem extends StatelessWidget {
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 12),
-      color: theme.colorScheme.surface,
+      color: theme.cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () { /* Navigate to article detail */ },
@@ -360,7 +362,7 @@ class _NewlyAddedArticleListItem extends StatelessWidget {
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 12),
-      color: theme.colorScheme.surface,
+      color: theme.cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () { /* Navigate to article detail */ },
@@ -436,13 +438,13 @@ class CryptoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
           colors: [
-            theme.colorScheme.surface,
-            theme.colorScheme.surface.withAlpha(200),
+            theme.cardColor,
+            theme.cardColor.withAlpha(200),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: theme.colorScheme.surface.withAlpha(150)),
+        border: Border.all(color: theme.cardColor.withAlpha(150)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

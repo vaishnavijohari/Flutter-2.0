@@ -1,10 +1,13 @@
+// lib/screens/main_screen.dart
+
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'stories_screen.dart';
 import 'games_screen.dart';
 import 'crypto_screen.dart';
 import 'profile_screen.dart';
-import '../widgets/common/custom_bottom_nav_bar.dart'; // <-- ADDED: Import the new custom widget
+import '../widgets/common/custom_bottom_nav_bar.dart';
+import '../widgets/common/app_background.dart'; // <-- NEW: Import the background
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -33,20 +36,21 @@ class _MainScreenState extends State<MainScreen> {
     ];
 
     return Scaffold(
-      // --- MODIFIED: Using a Stack to overlay the custom nav bar ---
-      body: Stack(
-        children: [
-          IndexedStack(
-            index: _selectedIndex,
-            children: screens,
-          ),
-          CustomBottomNavBar(
-            selectedIndex: _selectedIndex,
-            onItemTapped: _onItemTapped,
-          ),
-        ],
+      // The Scaffold's background is transparent due to the new AppTheme
+      body: AppBackground( // <-- MODIFIED: The AppBackground is now the base layer
+        child: Stack(
+          children: [
+            IndexedStack(
+              index: _selectedIndex,
+              children: screens,
+            ),
+            CustomBottomNavBar(
+              selectedIndex: _selectedIndex,
+              onItemTapped: _onItemTapped,
+            ),
+          ],
+        ),
       ),
-      // --- DELETED: The old BottomNavigationBar is no longer needed ---
     );
   }
 }

@@ -1,3 +1,5 @@
+// lib/screens/profile_screen.dart
+
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -65,13 +67,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final newUsernameController = TextEditingController();
     final formKey = GlobalKey<FormState>();
     
-    // It's safe to use context here because there's no await before it.
     final theme = Theme.of(context);
 
     final bool? wasUsernameChanged = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.cardColor,
+        backgroundColor: theme.colorScheme.surface,
         title: Text('Change Username', style: GoogleFonts.exo2(fontWeight: FontWeight.bold)),
         content: Form(
           key: formKey,
@@ -108,7 +109,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (wasUsernameChanged == true) {
       await _loadProfileData();
 
-      // --- FIXED: Added mounted check after the await call ---
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Username updated successfully!')),
@@ -117,13 +117,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _showLogoutDialog() async {
-    // Guarding context use before the async gap
     if (!mounted) return;
     final theme = Theme.of(context);
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.cardColor,
+        backgroundColor: theme.colorScheme.surface,
         title: Text('Log Out', style: GoogleFonts.exo2(fontWeight: FontWeight.bold)),
         content: const Text('Are you sure you want to log out?'),
         actions: [
@@ -141,7 +140,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     if (confirmed == true) {
-      // No context is used after this await, so it's safe.
       await _logout();
     }
   }
@@ -150,7 +148,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
 
-    // Guarding context use after the await
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -164,7 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
      final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: theme.cardColor,
+        backgroundColor: theme.colorScheme.surface,
         title: Text('Delete Account', style: GoogleFonts.exo2(fontWeight: FontWeight.bold)),
         content: const Text('Are you sure you want to delete your account? This action is irreversible.'),
         actions: [
@@ -189,12 +186,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isDarkMode = themeProvider.themeMode == ThemeMode.dark;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      // --- MODIFIED: Added a consistent AppBar ---
+      appBar: AppBar(
+        title: Text('Profile', style: GoogleFonts.orbitron(fontSize: 22, fontWeight: FontWeight.bold)),
+        centerTitle: true,
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(16.0),
               children: [
+                // --- DELETED: The old padding is no longer needed ---
                 _buildHeader(context),
                 const SizedBox(height: 24),
                 _buildSectionTitle('Settings'),
@@ -241,7 +243,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final theme = Theme.of(context);
     return Card(
       elevation: 0,
-      color: theme.colorScheme.surface,
+      color: theme.cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: _showChangeUsernameDialog,
@@ -252,10 +254,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               CircleAvatar(
                 radius: 30,
-                backgroundColor: theme.colorScheme.primaryContainer,
+                backgroundColor: theme.colorScheme.primary.withAlpha(50),
                 child: Text(
                   _username.isNotEmpty ? _username[0].toUpperCase() : 'R',
-                  style: GoogleFonts.orbitron(fontSize: 24, color: theme.colorScheme.onPrimaryContainer),
+                  style: GoogleFonts.orbitron(fontSize: 24, color: theme.colorScheme.primary),
                 ),
               ),
               const SizedBox(width: 16),
@@ -304,7 +306,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final theme = Theme.of(context);
     return Card(
       elevation: 0,
-      color: theme.colorScheme.surface,
+      color: theme.cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),

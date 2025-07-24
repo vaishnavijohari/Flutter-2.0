@@ -1,3 +1,5 @@
+// lib/screens/home_screen.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -94,12 +96,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      // --- MODIFIED: backgroundColor removed to allow theme transparency ---
       appBar: AppBar(
         title: Text('Freemium Novels', style: GoogleFonts.orbitron(fontSize: 22, fontWeight: FontWeight.bold)),
         centerTitle: true,
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-        elevation: 0,
+        // The AppBar's color is now controlled by the AppTheme
       ),
       body: _buildBody(),
     );
@@ -138,7 +139,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCarouselSection(List<Story> stories) {
     if (stories.isEmpty) return const SizedBox(height: 180, child: Center(child: Text('No new stories.')));
     
-    // MODIFIED: Using theme color for the dark overlay
     final overlayColor = Theme.of(context).brightness == Brightness.dark 
       ? Colors.black 
       : Colors.black54;
@@ -158,7 +158,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 image: DecorationImage(
                   image: AssetImage(story.imageUrl),
                   fit: BoxFit.cover,
-                  // MODIFIED: Using a theme-aware overlay color
                   colorFilter: ColorFilter.mode(overlayColor.withAlpha(50), BlendMode.darken)
                 )
               ),
@@ -173,7 +172,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         gradient: LinearGradient(
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
-                          // MODIFIED: Using a theme-aware gradient
                           colors: [overlayColor.withAlpha(200), Colors.transparent]
                         )
                       ),
@@ -203,7 +201,6 @@ class _HomeScreenState extends State<HomeScreen> {
             labelStyle: GoogleFonts.exo2(fontWeight: FontWeight.bold),
             unselectedLabelStyle: GoogleFonts.exo2(),
             labelColor: Theme.of(context).colorScheme.primary,
-            // MODIFIED: Replaced hardcoded color with theme-aware color
             unselectedLabelColor: Theme.of(context).textTheme.bodySmall?.color,
             indicatorColor: Theme.of(context).colorScheme.primary,
             tabs: const [Tab(text: 'Daily'), Tab(text: 'Weekly'), Tab(text: 'Monthly')],
@@ -352,14 +349,12 @@ class TrendingListItem extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: Image.asset(story.coverImageUrl, fit: BoxFit.cover,
-              // MODIFIED: Using theme color for placeholder
               errorBuilder: (context, error, stackTrace) => Container(color: Theme.of(context).colorScheme.surface),
             ),
           ),
         ),
       ),
       title: Text(story.title, style: GoogleFonts.exo2(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-      // MODIFIED: Using theme color for subtitle
       subtitle: Text('${story.views} Views', style: GoogleFonts.exo2(color: Theme.of(context).textTheme.bodySmall?.color)),
       trailing: Text('#$rank', style: GoogleFonts.orbitron(fontSize: 20, color: Theme.of(context).colorScheme.primary.withAlpha((255 * 0.7).round()))),
     );
@@ -382,14 +377,12 @@ class LatestUpdateListItem extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: Image.asset(update.coverImageUrl, fit: BoxFit.cover,
-              // MODIFIED: Using theme color for placeholder
               errorBuilder: (context, error, stackTrace) => Container(color: Theme.of(context).colorScheme.surface),
             ),
           ),
         ),
       ),
       title: Text(update.title, style: GoogleFonts.exo2(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis,),
-      // MODIFIED: Using theme color for subtitle
       subtitle: Text('${update.chapter} • ${update.time}', style: GoogleFonts.exo2(color: Theme.of(context).textTheme.bodySmall?.color)),
       trailing: const Icon(Icons.chevron_right),
     );
