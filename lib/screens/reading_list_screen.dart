@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 // import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models.dart';
 import '../dummy_data.dart';
@@ -29,7 +31,28 @@ class _ReadingListScreenState extends State<ReadingListScreen> {
 
   Future<void> _loadReadingList() async {
     final prefs = await SharedPreferences.getInstance();
-    final storyIds = prefs.getStringList('readingList') ?? [];
+    final user = FirebaseAuth.instance.currentUser;
+    List<String> storyIds = [];
+    if (user != null) {
+      try {
+        final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        if (userDoc.exists && userDoc.data() != null && userDoc.data()!.containsKey('readingList')) {
+          final cloudList = List<String>.from(userDoc['readingList'] ?? []);
+          storyIds = cloudList;
+          // Sync to local
+          await prefs.setStringList('readingList', cloudList);
+        } else {
+          // Fallback to local if no cloud data
+          storyIds = prefs.getStringList('readingList') ?? [];
+        }
+      } catch (e) {
+        // On error, fallback to local
+        storyIds = prefs.getStringList('readingList') ?? [];
+      }
+    } else {
+      // Not logged in, use local
+      storyIds = prefs.getStringList('readingList') ?? [];
+    }
 
     if (storyIds.isEmpty) {
       if (mounted) {
@@ -41,20 +64,38 @@ class _ReadingListScreenState extends State<ReadingListScreen> {
       return;
     }
 
-    // Using a Future.microtask to avoid calling read during build
     Future.microtask(() async {
       final List<ReadingListStory> loadedStories = [];
       final random = Random();
-
-      for (final id in storyIds) {
-        // In a real app, you would fetch story data from a repository
-        final story = MockData.getStoryById(id); 
-        if (story != null) {
-          final bool hasUpdate = random.nextDouble() > 0.7;
-          loadedStories.add(ReadingListStory(story: story, isUpdated: hasUpdate));
+      if (user != null) {
+        // Fetch each story from Firestore
+        for (final id in storyIds) {
+          try {
+            final doc = await FirebaseFirestore.instance.collection('stories').doc(id).get();
+            if (doc.exists && doc.data() != null) {
+              final data = doc.data()!;
+              final story = Story(
+                id: doc.id,
+                title: data['title'] ?? 'Untitled',
+                imageUrl: data['coverImage'] ?? '',
+              );
+              final bool hasUpdate = random.nextDouble() > 0.7;
+              loadedStories.add(ReadingListStory(story: story, isUpdated: hasUpdate));
+            }
+          } catch (e) {
+            // Skip if fetch fails
+          }
+        }
+      } else {
+        // Fallback to MockData for local users
+        for (final id in storyIds) {
+          final story = MockData.getStoryById(id);
+          if (story != null) {
+            final bool hasUpdate = random.nextDouble() > 0.7;
+            loadedStories.add(ReadingListStory(story: story, isUpdated: hasUpdate));
+          }
         }
       }
-
       if (mounted) {
         setState(() {
           _readingList = loadedStories;

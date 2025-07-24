@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models.dart';
 import '../services/story_repository.dart';
@@ -57,15 +59,32 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
     if (_storyDetail == null) return;
     final prefs = await SharedPreferences.getInstance();
     final readingList = prefs.getStringList('readingList') ?? [];
-    
-    setState(() => _isInReadingList = !_isInReadingList);
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      // Not logged in, just update local
+      setState(() => _isInReadingList = !_isInReadingList);
+      if (_isInReadingList) {
+        readingList.add(_storyDetail!.id);
+      } else {
+        readingList.remove(_storyDetail!.id);
+      }
+      await prefs.setStringList('readingList', readingList);
+      return;
+    }
 
+    setState(() => _isInReadingList = !_isInReadingList);
     if (_isInReadingList) {
-      readingList.add(_storyDetail!.id);
+      if (!readingList.contains(_storyDetail!.id)) {
+        readingList.add(_storyDetail!.id);
+      }
     } else {
       readingList.remove(_storyDetail!.id);
     }
     await prefs.setStringList('readingList', readingList);
+
+    // Save to Firestore
+    final userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    await userDoc.set({'readingList': readingList}, SetOptions(merge: true));
   }
 
   void _navigateToChapter(int chapterIndex) {
