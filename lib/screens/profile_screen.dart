@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../providers/theme_provider.dart';
 import 'login_screen.dart';
@@ -28,20 +30,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfileData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    String? storedUsername;
+    if (user != null) {
+      // Try to fetch username from Firestore
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (doc.exists && doc.data() != null && doc.data()!['username'] != null) {
+        storedUsername = doc.data()!['username'];
+      }
+    }
+    // Fallback to SharedPreferences if not found in Firestore
     final prefs = await SharedPreferences.getInstance();
-    String? storedUsername = prefs.getString('username');
-
-    // --- FIXED: Check for null before checking if empty ---
     if (storedUsername == null || storedUsername.isEmpty) {
-      storedUsername = 'Reader${Random().nextInt(9000) + 1000}';
+      storedUsername = prefs.getString('username');
+    }
+    if (storedUsername == null || storedUsername.isEmpty) {
+      storedUsername = 'Reader 0${Random().nextInt(9000) + 1000}';
       await prefs.setString('username', storedUsername);
     }
-
     final int? lastChangeTimestamp = prefs.getInt('lastUsernameChange');
     if (lastChangeTimestamp != null) {
       _lastUsernameChangeDate = DateTime.fromMillisecondsSinceEpoch(lastChangeTimestamp);
     }
-
     if (mounted) {
       setState(() {
         _username = storedUsername!;
@@ -95,6 +105,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.setString('username', newUsername);
                 await prefs.setInt('lastUsernameChange', DateTime.now().millisecondsSinceEpoch);
+                // Update username in Firestore
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null) {
+                  await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+                    'username': newUsername,
+                  });
+                }
                 Navigator.pop(dialogContext, true);
               }
             },
@@ -207,7 +224,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const Divider(),
                 _buildSectionTitle('Information'),
-                _buildListTile(icon: Icons.notifications_none_outlined, title: 'Notices', onTap: () {}),
+                _buildListTile(icon: Icons.notifications_none_outlined, title: 'Notifications', onTap: () {}),
                 _buildListTile(icon: Icons.shield_outlined, title: 'Privacy Policy', onTap: () {}),
                 _buildListTile(icon: Icons.description_outlined, title: 'Disclaimer', onTap: () {}),
                 ListTile(

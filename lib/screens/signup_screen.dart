@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'main_screen.dart';
 import '../widgets/common/auth_background.dart';
@@ -55,9 +56,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
         password: _passwordController.text.trim(),
       );
       final user = userCredential.user;
+      if (user != null) {
+        // Save username and email to Firestore
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'username': _usernameController.text.trim(),
+          'email': _emailController.text.trim(),
+        });
+      }
       if (user != null && !user.emailVerified) {
         await user.sendEmailVerification();
-      if (!mounted) return;
+        if (!mounted) return;
         await showDialog(
           context: context,
           builder: (context) => AlertDialog(

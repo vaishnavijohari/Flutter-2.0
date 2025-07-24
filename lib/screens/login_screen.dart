@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'signup_screen.dart';
 import 'main_screen.dart';
@@ -41,8 +42,25 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
+      String loginInput = _usernameController.text.trim();
+      String emailToUse = loginInput;
+      // If not an email, look up username in Firestore
+      if (!RegExp(r".+@.+\\..+").hasMatch(loginInput)) {
+        final query = await FirebaseFirestore.instance
+            .collection('users')
+            .where('username', isEqualTo: loginInput)
+            .limit(1)
+            .get();
+        if (query.docs.isEmpty) {
+          throw FirebaseAuthException(
+            code: 'user-not-found',
+            message: 'No user found for that username.',
+          );
+        }
+        emailToUse = query.docs.first['email'];
+      }
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _usernameController.text.trim(),
+        email: emailToUse,
         password: _passwordController.text.trim(),
       );
       // Set isLoggedIn to true after successful login
