@@ -83,8 +83,9 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
     await prefs.setStringList('readingList', readingList);
 
     // Save to Firestore
-    final userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
-    await userDoc.set({'readingList': readingList}, SetOptions(merge: true));
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'readingList': readingList,
+    });
   }
 
   void _navigateToChapter(int chapterIndex) {
