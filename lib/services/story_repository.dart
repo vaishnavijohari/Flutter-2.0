@@ -29,40 +29,85 @@ class StoryRepository {
 
       // Time filtering for trending
       final now = DateTime.now();
+      // Filter stories by time period
       final dailyStories = publishedStories.where((s) => now.difference(s.updatedAt).inHours < 24).toList();
       final weeklyStories = publishedStories.where((s) => now.difference(s.updatedAt).inDays < 7).toList();
       final monthlyStories = publishedStories.where((s) => now.difference(s.updatedAt).inDays < 30).toList();
 
-      // Sort by updatedAt descending
-      dailyStories.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      weeklyStories.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      monthlyStories.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      // Sort by views in the period, descending
+      dailyStories.sort((a, b) => (b.views ?? 0).compareTo(a.views ?? 0));
+      weeklyStories.sort((a, b) => (b.views ?? 0).compareTo(a.views ?? 0));
+      monthlyStories.sort((a, b) => (b.views ?? 0).compareTo(a.views ?? 0));
 
+      // For each time window, filter chapters by updatedAt and sum their views
+      // Helper to sum views for a story within a time window
+      int sumViewsForStoryWithin(List<FirebaseChapter> chapters, DateTime from) {
+        return chapters
+          .where((c) => c.updatedAt.isAfter(from))
+          .fold(0, (sum, c) => sum + (c.views ?? 0));
+      }
+      // Fetch all chapters for all stories
+      List<FirebaseChapter> allChapters = [];
+      for (final story in allStories) {
+        final chapters = await _chapterService.getChaptersByStoryId(story.id);
+        allChapters.addAll(chapters);
+      }
+      // Daily
+      DateTime dailyFrom = now.subtract(const Duration(hours: 24));
+      List<FirebaseStory> dailySorted = publishedStories.toList();
+      dailySorted.sort((a, b) {
+        int aViews = sumViewsForStoryWithin(
+          allChapters.where((c) => c.storyId == a.id).toList(), dailyFrom);
+        int bViews = sumViewsForStoryWithin(
+          allChapters.where((c) => c.storyId == b.id).toList(), dailyFrom);
+        return bViews.compareTo(aViews);
+      });
+      // Weekly
+      DateTime weeklyFrom = now.subtract(const Duration(days: 7));
+      List<FirebaseStory> weeklySorted = publishedStories.toList();
+      weeklySorted.sort((a, b) {
+        int aViews = sumViewsForStoryWithin(
+          allChapters.where((c) => c.storyId == a.id).toList(), weeklyFrom);
+        int bViews = sumViewsForStoryWithin(
+          allChapters.where((c) => c.storyId == b.id).toList(), weeklyFrom);
+        return bViews.compareTo(aViews);
+      });
+      // Monthly
+      DateTime monthlyFrom = now.subtract(const Duration(days: 30));
+      List<FirebaseStory> monthlySorted = publishedStories.toList();
+      monthlySorted.sort((a, b) {
+        int aViews = sumViewsForStoryWithin(
+          allChapters.where((c) => c.storyId == a.id).toList(), monthlyFrom);
+        int bViews = sumViewsForStoryWithin(
+          allChapters.where((c) => c.storyId == b.id).toList(), monthlyFrom);
+        return bViews.compareTo(aViews);
+      });
       // Map to TrendingStory (limit to 3 for each section)
-      List<TrendingStory> daily = dailyStories.take(3).map((fs) => 
+      List<TrendingStory> daily = dailySorted.take(3).map((fs) => 
         TrendingStory(
           id: fs.id,
           coverImageUrl: fs.coverImage.isNotEmpty ? fs.coverImage : 'https://via.placeholder.com/150x220?text=${fs.title.replaceAll(' ', '+').substring(0, 8)}',
           title: fs.title,
-          views: Random().nextInt(5000) + 1000, // Mock views
+          views: sumViewsForStoryWithin(
+            allChapters.where((c) => c.storyId == fs.id).toList(), dailyFrom),
         )
       ).toList();
-
-      List<TrendingStory> weekly = weeklyStories.take(3).map((fs) => 
+      List<TrendingStory> weekly = weeklySorted.take(3).map((fs) => 
         TrendingStory(
           id: fs.id,
           coverImageUrl: fs.coverImage.isNotEmpty ? fs.coverImage : 'https://via.placeholder.com/150x220?text=${fs.title.replaceAll(' ', '+').substring(0, 8)}',
           title: fs.title,
-          views: Random().nextInt(3000) + 2000, // Mock views
+          views: sumViewsForStoryWithin(
+            allChapters.where((c) => c.storyId == fs.id).toList(), weeklyFrom),
         )
       ).toList();
-
-      List<TrendingStory> monthly = monthlyStories.take(3).map((fs) => 
+      List<TrendingStory> monthly = monthlySorted.take(3).map((fs) => 
         TrendingStory(
           id: fs.id,
           coverImageUrl: fs.coverImage.isNotEmpty ? fs.coverImage : 'https://via.placeholder.com/150x220?text=${fs.title.replaceAll(' ', '+').substring(0, 8)}',
           title: fs.title,
-          views: Random().nextInt(4000) + 1500, // Mock views
+          views: sumViewsForStoryWithin(
+            allChapters.where((c) => c.storyId == fs.id).toList(), monthlyFrom),
         )
       ).toList();
 
@@ -73,8 +118,8 @@ class StoryRepository {
           id: fs.id,
           coverImageUrl: fs.coverImage.isNotEmpty ? fs.coverImage : 'https://via.placeholder.com/150x220?text=${fs.title.replaceAll(' ', '+').substring(0, 8)}',
           title: fs.title,
-          chapter: 'Chapter  [36m${fs.chapterCount} [0m',
-          time: _getTimeAgo(fs.updatedAt),
+          chapter: '', // Remove chapter info
+          time: '${fs.views ?? 0} Views',
         )
       ).toList();
 

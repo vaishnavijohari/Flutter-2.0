@@ -155,6 +155,17 @@ class ChapterService {
     }
   }
 
+  // Sum all chapter views for a story and update the story's views in Firestore
+  Future<void> updateStoryViewsFromChapters(String storyId) async {
+    try {
+      final chapters = await getChaptersByStoryId(storyId);
+      final totalViews = chapters.fold<int>(0, (sum, chapter) => sum + (chapter.views ?? 0));
+      await _firestore.collection('stories').doc(storyId).update({'views': totalViews});
+    } catch (e) {
+      print('Failed to update story views: $e');
+    }
+  }
+
   // Helper function to update story chapter count
   Future<void> _updateStoryChapterCount(String storyId) async {
     try {

@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models.dart';
 import '../providers/reader_settings_provider.dart';
@@ -80,7 +81,10 @@ class _ChapterContentScreenState extends State<ChapterContentScreen> with Single
         widget.storyDetail.id, 
         chapterNumber
       );
-      
+      // Increment chapter views in Firestore
+      await _incrementChapterViews(widget.storyDetail.id, chapterNumber);
+      // Update story views from all chapters
+      await _chapterService.updateStoryViewsFromChapters(widget.storyDetail.id);
       _chapterContentCache[chapterIndex] = content;
       
       if (mounted) {
@@ -93,6 +97,22 @@ class _ChapterContentScreenState extends State<ChapterContentScreen> with Single
       if (mounted) {
         setState(() => _isContentLoading = false);
       }
+    }
+  }
+
+  Future<void> _incrementChapterViews(String storyId, int chapterNumber) async {
+    try {
+      final query = await FirebaseFirestore.instance
+          .collection('chapters')
+          .where('storyId', isEqualTo: storyId)
+          .where('chapterNumber', isEqualTo: chapterNumber)
+          .limit(1)
+          .get();
+      if (query.docs.isNotEmpty) {
+        await query.docs.first.reference.update({'views': FieldValue.increment(1)});
+      }
+    } catch (e) {
+      // Optionally handle error
     }
   }
 

@@ -52,6 +52,7 @@ class FirebaseStory {
   final DateTime updatedAt;
   final String authorId;
   final int chapterCount;
+  final int views;
 
   FirebaseStory({
     required this.id,
@@ -64,6 +65,7 @@ class FirebaseStory {
     required this.updatedAt,
     required this.authorId,
     this.chapterCount = 0,
+    this.views = 0,
   });
 
   factory FirebaseStory.fromFirestore(DocumentSnapshot doc) {
@@ -91,6 +93,7 @@ class FirebaseStory {
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
       authorId: data['authorId'] ?? '',
       chapterCount: data['chapters'] ?? 0,
+      views: data['views'] ?? 0,
     );
   }
 
@@ -105,6 +108,7 @@ class FirebaseStory {
       'updatedAt': Timestamp.fromDate(updatedAt),
       'authorId': authorId,
       'chapters': chapterCount,
+      'views': views,
     };
   }
 
@@ -225,6 +229,7 @@ class FirebaseChapter {
   final DateTime updatedAt;
   final int wordCount;
   final String authorId;
+  final int views;
 
   FirebaseChapter({
     required this.id,
@@ -237,6 +242,7 @@ class FirebaseChapter {
     required this.updatedAt,
     required this.wordCount,
     required this.authorId,
+    this.views = 0,
   });
 
   factory FirebaseChapter.fromFirestore(DocumentSnapshot doc) {
@@ -256,6 +262,7 @@ class FirebaseChapter {
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
       wordCount: data['wordCount'] ?? 0,
       authorId: data['authorId'] ?? '',
+      views: data['views'] ?? 0,
     );
   }
 
@@ -270,6 +277,7 @@ class FirebaseChapter {
       'updatedAt': Timestamp.fromDate(updatedAt),
       'wordCount': wordCount,
       'authorId': authorId,
+      'views': views,
     };
   }
 

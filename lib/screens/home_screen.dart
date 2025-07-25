@@ -390,7 +390,7 @@ class LatestUpdateListItem extends StatelessWidget {
       ),
       title: Text(update.title, style: GoogleFonts.exo2(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis,),
       // MODIFIED: Using theme color for subtitle
-      subtitle: Text('${update.chapter} • ${update.time}', style: GoogleFonts.exo2(color: Theme.of(context).textTheme.bodySmall?.color)),
+      subtitle: Text(update.time, style: GoogleFonts.exo2(color: Theme.of(context).textTheme.bodySmall?.color)),
       trailing: const Icon(Icons.chevron_right),
     );
   }

@@ -20,6 +20,7 @@ class StoryDetailScreen extends StatefulWidget {
 
 class _StoryDetailScreenState extends State<StoryDetailScreen> {
   StoryDetail? _storyDetail;
+  int? _storyViews;
   bool _isLoading = true;
   bool _isInReadingList = false;
   
@@ -34,6 +35,7 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
   void initState() {
     super.initState();
     _fetchFullStoryDetails();
+    _fetchStoryViews();
   }
 
   Future<void> _fetchFullStoryDetails() async {
@@ -52,6 +54,19 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
       }
     } catch (e) {
       if(mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchStoryViews() async {
+    try {
+      final doc = await FirebaseFirestore.instance.collection('stories').doc(widget.story.id).get();
+      if (doc.exists && doc.data() != null && doc.data()!['views'] != null) {
+        setState(() {
+          _storyViews = doc.data()!['views'];
+        });
+      }
+    } catch (e) {
+      // Optionally handle error
     }
   }
 
@@ -290,39 +305,49 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
 
   Widget _buildActionButtons() { 
     final theme = Theme.of(context);
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: _toggleReadingList,
-            icon: Icon(_isInReadingList ? Icons.check_circle : Icons.add_circle_outline, size: 20),
-            label: Text(
-              _isInReadingList ? 'On List' : 'Add to List',
-              style: GoogleFonts.exo2(fontWeight: FontWeight.bold),
-            ),
-            style: OutlinedButton.styleFrom(
-              // MODIFIED: Replaced onBackground with onSurface
-              foregroundColor: _isInReadingList ? theme.colorScheme.primary : theme.colorScheme.onSurface,
-              side: BorderSide(color: _isInReadingList ? theme.colorScheme.primary : theme.dividerColor),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+        if (_storyViews != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Text('Total Views: $_storyViews', style: GoogleFonts.exo2(fontWeight: FontWeight.bold)),
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () => _navigateToChapter(0),
-            icon: const Icon(Icons.menu_book, size: 20),
-            label: Text(
-              'Read Now',
-              style: GoogleFonts.exo2(fontWeight: FontWeight.bold),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _toggleReadingList,
+                icon: Icon(_isInReadingList ? Icons.check_circle : Icons.add_circle_outline, size: 20),
+                label: Text(
+                  _isInReadingList ? 'On List' : 'Add to List',
+                  style: GoogleFonts.exo2(fontWeight: FontWeight.bold),
+                ),
+                style: OutlinedButton.styleFrom(
+                  // MODIFIED: Replaced onBackground with onSurface
+                  foregroundColor: _isInReadingList ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                  side: BorderSide(color: _isInReadingList ? theme.colorScheme.primary : theme.dividerColor),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
             ),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            const SizedBox(width: 16),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => _navigateToChapter(0),
+                icon: const Icon(Icons.menu_book, size: 20),
+                label: Text(
+                  'Read Now',
+                  style: GoogleFonts.exo2(fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ],
     );
