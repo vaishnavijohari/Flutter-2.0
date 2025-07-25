@@ -1,9 +1,12 @@
+// lib/screens/article_detail_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../models.dart';
 import '../dummy_data.dart'; // To fetch recommended articles
+import '../widgets/common/app_background.dart'; // Import background
 
 class ArticleDetailScreen extends StatefulWidget {
   final Article article;
@@ -15,7 +18,6 @@ class ArticleDetailScreen extends StatefulWidget {
 }
 
 class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
-  // --- NEW: State for handling recommended articles ---
   List<Article> _recommendedArticles = [];
   bool _isLoadingRecommendations = true;
 
@@ -25,12 +27,9 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
     _fetchRecommendations();
   }
 
-  // --- NEW: Fetches and sets the recommended articles ---
   Future<void> _fetchRecommendations() async {
-    // Get all articles from the same category
     final allArticlesInCategory = MockData.getArticlesByCategory(widget.article.category);
     
-    // Remove the current article from the list, shuffle, and take 3
     final recommendations = allArticlesInCategory
         .where((a) => a.id != widget.article.id)
         .toList()
@@ -51,7 +50,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
     Share.share(textToShare, subject: 'An interesting article from Fabula');
   }
 
-  // --- NEW: Navigation function for smooth transitions ---
   void _navigateToArticle(Article article) {
      Navigator.push(
       context,
@@ -66,98 +64,94 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 250.0,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                widget.article.category,
-                // MODIFIED: Applied consistent font
-                style: GoogleFonts.orbitron(
-                  shadows: const [Shadow(blurRadius: 8)],
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.network(
-                    widget.article.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Center(child: Icon(Icons.image_not_supported)),
+      backgroundColor: Colors.transparent, // Use transparent background
+      body: AppBackground( // Wrap body with AppBackground
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 250.0,
+              pinned: true,
+              backgroundColor: Colors.transparent,
+              flexibleSpace: FlexibleSpaceBar(
+                title: Text(
+                  widget.article.category,
+                  style: GoogleFonts.orbitron(
+                    shadows: const [Shadow(blurRadius: 8)],
+                    fontWeight: FontWeight.bold,
                   ),
-                  // NEW: Gradient for better title legibility
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.transparent, Colors.black.withAlpha(150)],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        stops: const [0.6, 1.0],
+                ),
+                background: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      widget.article.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Center(child: Icon(Icons.image_not_supported)),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.transparent, Colors.black.withAlpha(150)],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: const [0.6, 1.0],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.share),
+                  tooltip: 'Share Article',
+                  onPressed: () => _shareArticle(context),
+                ),
+              ],
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.article.title,
+                      style: GoogleFonts.orbitron(
+                        textStyle: Theme.of(context).textTheme.headlineSmall,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'By ${widget.article.author} • ${widget.article.publishedDate}',
+                      style: GoogleFonts.exo2(
+                        textStyle: Theme.of(context).textTheme.bodyMedium,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                    ),
+                    const Divider(height: 32),
+                    Text(
+                      widget.article.content,
+                      style: GoogleFonts.exo2(
+                        textStyle: Theme.of(context).textTheme.bodyLarge,
+                        height: 1.6,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildReadAlsoSection(),
+                  ],
+                ),
               ),
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.share),
-                tooltip: 'Share Article',
-                onPressed: () => _shareArticle(context),
-              ),
-            ],
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // MODIFIED: Applied consistent fonts and theme colors
-                  Text(
-                    widget.article.title,
-                    style: GoogleFonts.orbitron(
-                      textStyle: theme.textTheme.headlineSmall,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'By ${widget.article.author} • ${widget.article.publishedDate}',
-                    style: GoogleFonts.exo2(
-                      textStyle: theme.textTheme.bodyMedium,
-                      color: theme.textTheme.bodySmall?.color,
-                    ),
-                  ),
-                  const Divider(height: 32),
-                  Text(
-                    widget.article.content,
-                    style: GoogleFonts.exo2(
-                      textStyle: theme.textTheme.bodyLarge,
-                      height: 1.6,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // --- NEW: "Read Also" section ---
-                  _buildReadAlsoSection(),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  // --- NEW: Widget to build the "Read Also" section ---
   Widget _buildReadAlsoSection() {
     if (_isLoadingRecommendations || _recommendedArticles.isEmpty) {
       return const SizedBox.shrink();
@@ -184,7 +178,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   }
 }
 
-// --- NEW: A card widget for recommended articles ---
 class _RecommendedArticleCard extends StatelessWidget {
   final Article article;
   final VoidCallback onTap;

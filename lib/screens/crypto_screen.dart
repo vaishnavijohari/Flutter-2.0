@@ -123,7 +123,7 @@ class _CryptoScreenState extends State<CryptoScreen> {
               _buildTrendingArticlesSection(),
               const SizedBox(height: 32),
               _buildNewlyAddedArticlesSection(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 100), // <-- FIXED: Adjusted bottom padding
             ],
           ),
         ),

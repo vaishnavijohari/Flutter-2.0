@@ -187,6 +187,7 @@ class _StoriesScreenState extends State<StoriesScreen> {
             totalPages: _totalPages,
             onPageChanged: (page) => setState(() => _currentPage = page),
           ),
+        const SizedBox(height: 85), // <-- FIXED: Added padding for the bottom nav bar
       ],
     );
   }

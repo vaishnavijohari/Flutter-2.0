@@ -130,6 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 20),
             _buildLatestUpdateSection(context, stories.latestUpdates),
             const SizedBox(height: 20),
+            const SizedBox(height: 100), // <-- FIXED: Added padding for the bottom nav bar
           ],
         ),
       ),

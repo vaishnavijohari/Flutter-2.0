@@ -1,14 +1,14 @@
+// lib/screens/reading_list_screen.dart
+
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-// import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models.dart';
 import '../dummy_data.dart';
 import 'story_detail_screen.dart';
-
-// DELETED: ReadingListStory model is now in models.dart
+import '../widgets/common/app_background.dart'; // Import background
 
 class ReadingListScreen extends StatefulWidget {
   const ReadingListScreen({super.key});
@@ -41,13 +41,11 @@ class _ReadingListScreenState extends State<ReadingListScreen> {
       return;
     }
 
-    // Using a Future.microtask to avoid calling read during build
     Future.microtask(() async {
       final List<ReadingListStory> loadedStories = [];
       final random = Random();
 
       for (final id in storyIds) {
-        // In a real app, you would fetch story data from a repository
         final story = MockData.getStoryById(id); 
         if (story != null) {
           final bool hasUpdate = random.nextDouble() > 0.7;
@@ -74,7 +72,6 @@ class _ReadingListScreenState extends State<ReadingListScreen> {
         },
       ),
     ).then((_) {
-      // Refresh the list when returning from the detail screen
       _loadReadingList();
     });
   }
@@ -82,16 +79,16 @@ class _ReadingListScreenState extends State<ReadingListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // MODIFIED: Using theme colors
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent, // Use transparent background
       appBar: AppBar(
-        // MODIFIED: Applied consistent fonts and styles
         title: Text('My Reading List', style: GoogleFonts.orbitron(fontWeight: FontWeight.bold)),
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,
       ),
-      body: _buildBody(),
+      body: AppBackground( // Wrap body with AppBackground
+        child: _buildBody(),
+      ),
     );
   }
 
@@ -104,22 +101,19 @@ class _ReadingListScreenState extends State<ReadingListScreen> {
       return _buildEmptyState();
     }
     
-    // --- NEW: Using RefreshIndicator for pull-to-refresh ---
     return RefreshIndicator(
       onRefresh: _loadReadingList,
       child: GridView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _readingList.length,
-        // --- MODIFIED: Using GridView for thumbnail layout ---
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           mainAxisSpacing: 18,
           crossAxisSpacing: 18,
-          childAspectRatio: 0.65, // Portrait aspect ratio
+          childAspectRatio: 0.65,
         ),
         itemBuilder: (context, index) {
           final item = _readingList[index];
-          // --- NEW: Using a dedicated card widget for thumbnails ---
           return ReadingListCard(
             item: item,
             onTap: () => _navigateToDetail(item.story),
@@ -129,7 +123,6 @@ class _ReadingListScreenState extends State<ReadingListScreen> {
     );
   }
 
-  // --- MODIFIED: Themed and restyled empty state message ---
   Widget _buildEmptyState() {
     final theme = Theme.of(context);
     return Center(
@@ -157,7 +150,6 @@ class _ReadingListScreenState extends State<ReadingListScreen> {
   }
 }
 
-// --- NEW: A card widget for the thumbnail grid view ---
 class ReadingListCard extends StatelessWidget {
   final ReadingListStory item;
   final VoidCallback onTap;
@@ -187,7 +179,6 @@ class ReadingListCard extends StatelessWidget {
               errorBuilder: (context, error, stackTrace) =>
                   Container(color: theme.colorScheme.surface, child: const Icon(Icons.image_not_supported)),
             ),
-            // Gradient for text legibility
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -210,7 +201,6 @@ class ReadingListCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            // The "Updated" indicator dot
             if (item.isUpdated)
               Positioned(
                 top: 6,

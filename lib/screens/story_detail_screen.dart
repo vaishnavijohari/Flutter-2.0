@@ -1,3 +1,5 @@
+// lib/screens/story_detail_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +9,7 @@ import 'package:shimmer/shimmer.dart';
 import '../models.dart';
 import '../services/story_repository.dart';
 import 'chapter_content_screen.dart';
+import '../widgets/common/app_background.dart';
 
 class StoryDetailScreen extends StatefulWidget {
   final Story story;
@@ -87,43 +90,49 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: _isLoading
-          ? _buildLoadingShimmer()
-          : CustomScrollView(
-              slivers: [
-                _buildSliverAppBar(),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildGenreTags(),
-                        const SizedBox(height: 24),
-                        _buildActionButtons(),
-                        const SizedBox(height: 16),
-                        const Divider(),
-                        _buildExpandableSectionHeader(
-                          title: 'Description',
-                          isExpanded: _isDescriptionExpanded,
-                          onTap: () => setState(() => _isDescriptionExpanded = !_isDescriptionExpanded),
-                        ),
-                        _buildAnimatedSection(_isDescriptionExpanded, _buildDescription()),
-                        const Divider(),
-                        _buildExpandableSectionHeader(
-                          title: 'Chapters (${_storyDetail?.chapters.length ?? 0})',
-                          isExpanded: _isChaptersExpanded,
-                          onTap: () => setState(() => _isChaptersExpanded = !_isChaptersExpanded),
-                        ),
-                         _buildAnimatedSection(_isChaptersExpanded, _buildChapterPagination()),
-                      ],
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: _isLoading
+            ? _buildLoadingShimmer()
+            : CustomScrollView(
+                slivers: [
+                  _buildSliverAppBar(),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildGenreTags(),
+                          const SizedBox(height: 24),
+                          _buildActionButtons(),
+                          const SizedBox(height: 16),
+                          const Divider(),
+                          _buildExpandableSectionHeader(
+                            title: 'Description',
+                            isExpanded: _isDescriptionExpanded,
+                            onTap: () => setState(() => _isDescriptionExpanded = !_isDescriptionExpanded),
+                          ),
+                          _buildAnimatedSection(_isDescriptionExpanded, _buildDescription()),
+                          const Divider(),
+                          _buildExpandableSectionHeader(
+                            title: 'Chapters (${_storyDetail?.chapters.length ?? 0})',
+                            isExpanded: _isChaptersExpanded,
+                            onTap: () => setState(() => _isChaptersExpanded = !_isChaptersExpanded),
+                          ),
+                           _buildAnimatedSection(_isChaptersExpanded, _buildChapterPagination()),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                if (_isChaptersExpanded) _buildChapterList(),
-              ],
-            ),
+                  if (_isChaptersExpanded) _buildChapterList(),
+                  // FIXED: Added a Sliver with a SizedBox for bottom padding
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 100),
+                  ),
+                ],
+              ),
+      ),
     );
   }
   
@@ -133,7 +142,8 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
     return SliverAppBar(
       expandedHeight: 300.0,
       pinned: true,
-      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+      // MODIFIED: Set a solid background color for the collapsed app bar
+      backgroundColor: const Color(0xFF2C3E50), 
       foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: true,
@@ -151,7 +161,7 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, gradientColor],
+                  colors: [Colors.transparent, gradientColor.withOpacity(0.0)],
                   stops: const [0.5, 1.0],
                 ),
               ),
@@ -243,9 +253,10 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                 title: Text('Chapter ${chapter.chapterNumber}: ${chapter.title}', style: GoogleFonts.exo2()),
                 onTap: () {
                   final trueIndex = _storyDetail!.chapters.indexOf(chapter);
+
                   _navigateToChapter(trueIndex);
                 },
-                contentPadding: const EdgeInsets.symmetric(horizontal: 0),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
               ),
               const Divider(height: 1),
             ],
@@ -281,7 +292,6 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
               style: GoogleFonts.exo2(fontWeight: FontWeight.bold),
             ),
             style: OutlinedButton.styleFrom(
-              // MODIFIED: Replaced onBackground with onSurface
               foregroundColor: _isInReadingList ? theme.colorScheme.primary : theme.colorScheme.onSurface,
               side: BorderSide(color: _isInReadingList ? theme.colorScheme.primary : theme.dividerColor),
               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -339,6 +349,7 @@ class _StoryDetailScreenState extends State<StoryDetailScreen> {
                       Expanded(child: Container(height: 48, color: placeholderColor, margin: const EdgeInsets.only(right: 16))),
                       Expanded(child: Container(height: 48, color: placeholderColor)),
                     ],
+
                   ),
                   const SizedBox(height: 16),
                   const Divider(),

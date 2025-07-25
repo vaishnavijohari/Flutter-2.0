@@ -1,3 +1,5 @@
+// lib/screens/all_updates_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,6 +8,7 @@ import 'package:shimmer/shimmer.dart';
 import '../models.dart';
 import '../services/story_repository.dart';
 import 'story_detail_screen.dart';
+import '../widgets/common/app_background.dart'; // Import background
 
 class AllUpdatesScreen extends StatefulWidget {
   const AllUpdatesScreen({super.key});
@@ -52,33 +55,31 @@ class _AllUpdatesScreenState extends State<AllUpdatesScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      // MODIFIED: Using theme-aware colors
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent, // Use transparent background
       appBar: AppBar(
-        // MODIFIED: Renamed screen and applied new font
         title: Text('48 Happy Hours', style: GoogleFonts.orbitron(fontWeight: FontWeight.bold)),
         backgroundColor: theme.appBarTheme.backgroundColor,
         foregroundColor: theme.appBarTheme.foregroundColor,
         elevation: 0,
       ),
-      // MODIFIED: Swapped CircularProgressIndicator for a Shimmer effect
-      body: _isLoading
-          ? _buildLoadingShimmer()
-          : ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: _allUpdates.length,
-              itemBuilder: (context, index) {
-                final update = _allUpdates[index];
-                return LatestUpdateListItem(
-                  update: update,
-                  onTap: () => _navigateToDetail(update),
-                );
-              },
-            ),
+      body: AppBackground( // Wrap body with AppBackground
+        child: _isLoading
+            ? _buildLoadingShimmer()
+            : ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: _allUpdates.length,
+                itemBuilder: (context, index) {
+                  final update = _allUpdates[index];
+                  return LatestUpdateListItem(
+                    update: update,
+                    onTap: () => _navigateToDetail(update),
+                  );
+                },
+              ),
+      ),
     );
   }
 
-  // --- NEW: Shimmer loading effect for a better UX ---
   Widget _buildLoadingShimmer() {
     final theme = Theme.of(context);
     return Shimmer.fromColors(
@@ -97,7 +98,7 @@ class _AllUpdatesScreenState extends State<AllUpdatesScreen> {
               padding: const EdgeInsets.all(12.0),
               child: Row(
                 children: [
-                  Container(width: 50, height: 70, color: Colors.black, // Shimmer base color
+                  Container(width: 50, height: 70,
                     decoration: BoxDecoration(
                       color: Colors.black,
                       borderRadius: BorderRadius.circular(8),
@@ -124,7 +125,6 @@ class _AllUpdatesScreenState extends State<AllUpdatesScreen> {
   }
 }
 
-// --- NEW: Redesigned list item as a Card for a more modern look ---
 class LatestUpdateListItem extends StatelessWidget {
   final LatestUpdate update;
   final VoidCallback onTap;

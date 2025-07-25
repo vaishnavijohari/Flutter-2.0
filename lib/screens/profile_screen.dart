@@ -194,7 +194,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 100.0), // <-- FIXED: Adjusted bottom padding
               children: [
                 // --- DELETED: The old padding is no longer needed ---
                 _buildHeader(context),

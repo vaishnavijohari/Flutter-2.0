@@ -53,7 +53,7 @@ flutter:
   # Asset declaration
   assets:
     - assets/logo.png
-    - assets/images/ # <-- ADDED: Includes all images in this folder
+    #- assets/images/ # <-- ADDED: Includes all images in this folder
 
   # Font declaration
   # To use this, create a 'fonts' folder in your project's root

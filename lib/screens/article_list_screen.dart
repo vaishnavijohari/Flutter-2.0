@@ -1,3 +1,5 @@
+// lib/screens/article_list_screen.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +9,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../models.dart';
 import '../dummy_data.dart';
 import 'article_detail_screen.dart';
+import '../widgets/common/app_background.dart'; // Import background
 
 class ArticleListScreen extends StatefulWidget {
   final String categoryName;
@@ -58,12 +61,9 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Stack(
-        children: [
-          _buildThemedBackground(context),
-          _buildBody(),
-        ],
+      backgroundColor: Colors.transparent, // Use transparent background
+      body: AppBackground( // Wrap body with AppBackground
+        child: _buildBody(),
       ),
     );
   }
@@ -79,7 +79,6 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           automaticallyImplyLeading: true,
-          // --- FIXED: Replaced deprecated onBackground with onSurface ---
           foregroundColor: Theme.of(context).colorScheme.onSurface,
         ),
         if (_articles.isEmpty)
@@ -144,29 +143,6 @@ class _ArticleListScreenState extends State<ArticleListScreen> {
     );
   }
 
-  Widget _buildThemedBackground(BuildContext context) {
-    IconData icon;
-    switch (widget.categoryName) {
-      case 'Finance & Crypto': icon = FontAwesomeIcons.chartLine; break;
-      case 'Entertainment': icon = FontAwesomeIcons.masksTheater; break;
-      case 'Sports': icon = FontAwesomeIcons.trophy; break;
-      case 'World': icon = FontAwesomeIcons.earthAmericas; break;
-      default: icon = Icons.article;
-    }
-    return Align(
-      alignment: Alignment.bottomRight,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 20, bottom: 40),
-        child: FaIcon(
-          icon,
-          size: 300,
-          // --- FIXED: Replaced withOpacity with withAlpha ---
-          color: Theme.of(context).colorScheme.surface.withAlpha((255 * 0.5).round()),
-        ),
-      ),
-    );
-  }
-
   Widget _buildErrorState() { return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.error_outline, color: Colors.red, size: 60), const SizedBox(height: 16), Text(_errorMessage!, style: const TextStyle(fontSize: 16)), const SizedBox(height: 16), ElevatedButton(onPressed: _fetchArticles, child: const Text('Try Again'))])); }
   Widget _buildEmptyState() { return const Center(child: Text('No articles found in this category.', style: TextStyle(fontSize: 16, color: Colors.grey))); }
 
@@ -220,7 +196,6 @@ class ArticleListItem extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       elevation: 2,
-      // --- FIXED: Replaced withOpacity with withAlpha ---
       shadowColor: theme.shadowColor.withAlpha((255 * 0.2).round()),
       margin: const EdgeInsets.symmetric(vertical: 8),
       clipBehavior: Clip.antiAlias,
