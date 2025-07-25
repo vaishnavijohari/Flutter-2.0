@@ -224,7 +224,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const Divider(),
                 _buildSectionTitle('Information'),
-                _buildListTile(icon: Icons.notifications_none_outlined, title: 'Notifications', onTap: () {}),
                 _buildListTile(icon: Icons.shield_outlined, title: 'Privacy Policy', onTap: () {}),
                 _buildListTile(icon: Icons.description_outlined, title: 'Disclaimer', onTap: () {}),
                 ListTile(
