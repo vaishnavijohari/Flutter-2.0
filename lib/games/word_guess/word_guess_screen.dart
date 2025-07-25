@@ -218,6 +218,119 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
     );
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: Text('Guess the Word', style: GoogleFonts.orbitron(color: Colors.white, shadows: [const Shadow(color: Colors.black, blurRadius: 5)])),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: GameBackground(
+        // --- MODIFIED: Main layout is now a Column to support the ad banner ---
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center, // Center the game content vertically
+                    children: [
+                      SizedBox(height: AppBar().preferredSize.height), // Top padding for app bar
+                      _buildHeader(),
+                      const SizedBox(height: 20),
+                      _buildHint(),
+                      const SizedBox(height: 30),
+                      _buildWordDisplay(),
+                      const SizedBox(height: 40),
+                      _buildKeyboard(),
+                      const SizedBox(height: 20), // Bottom padding
+                    ],
+                  ),
+                ),
+              ),
+              // --- NEW: Ad placeholder at the bottom ---
+              Container(
+                height: 50,
+                width: double.infinity,
+                color: Colors.black.withAlpha(100),
+                margin: const EdgeInsets.all(8),
+                child: const Center(
+                  child: Text(
+                    'Ad Placeholder',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- NEW: Extracted header UI for clarity ---
+  Widget _buildHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text("Level ${_currentLevel + 1}", style: GoogleFonts.exo2(fontSize: 18, color: Colors.white70)),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Row(
+              children: List.generate(_maxLives, (index) {
+                return AnimatedScale(
+                  scale: _lives > index ? 1.0 : 0.8,
+                  duration: const Duration(milliseconds: 200),
+                  child: AnimatedOpacity(
+                    opacity: _lives > index ? 1.0 : 0.5,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      _lives > index ? Icons.favorite : Icons.favorite_border,
+                      color: Colors.redAccent,
+                      shadows: const [Shadow(color: Colors.black, blurRadius: 4, offset: Offset(1,1))],
+                    ),
+                  ),
+                );
+              }),
+            ),
+            if (_timeUntilNextLife != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Text(
+                  'Next in: ${_timeUntilNextLife!.inMinutes}:${(_timeUntilNextLife!.inSeconds % 60).toString().padLeft(2, '0')}',
+                  style: GoogleFonts.orbitron(fontSize: 12, color: Colors.cyanAccent),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+  
+  // --- NEW: Extracted hint UI for clarity ---
+  Widget _buildHint() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black.withAlpha(60),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withAlpha(30)),
+      ),
+      child: Text(
+        "Hint: $_hint",
+        textAlign: TextAlign.center,
+        style: GoogleFonts.exo2(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.white),
+      ),
+    );
+  }
+
   Widget _buildWordDisplay() {
     return AnimatedBuilder(
       animation: _wordShakeController,
@@ -409,7 +522,6 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
     _showThemedDialog(
       title: "Out of Lives!",
       content: "Watch an ad to get 2 more lives, or wait for them to regenerate.",
-      // --- FIXED: Replaced incorrect icon name ---
       icon: Icons.heart_broken,
       iconColor: Colors.redAccent,
       actions: [
@@ -453,85 +565,6 @@ class _WordGuessScreenState extends State<WordGuessScreen> with TickerProviderSt
             child: Text("Awesome!", style: GoogleFonts.orbitron(fontWeight: FontWeight.bold)),
           ),
       ]
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: Text('Guess the Word', style: GoogleFonts.orbitron(color: Colors.white, shadows: [const Shadow(color: Colors.black, blurRadius: 5)])),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: GameBackground(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 120, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Level ${_currentLevel + 1}", style: GoogleFonts.exo2(fontSize: 18, color: Colors.white70)),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Row(
-                        children: List.generate(_maxLives, (index) {
-                          return AnimatedScale(
-                            scale: _lives > index ? 1.0 : 0.8,
-                            duration: const Duration(milliseconds: 200),
-                            child: AnimatedOpacity(
-                              opacity: _lives > index ? 1.0 : 0.5,
-                              duration: const Duration(milliseconds: 200),
-                              child: Icon(
-                                _lives > index ? Icons.favorite : Icons.favorite_border,
-                                color: Colors.redAccent,
-                                shadows: const [Shadow(color: Colors.black, blurRadius: 4, offset: Offset(1,1))],
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
-                      if (_timeUntilNextLife != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
-                          child: Text(
-                            'Next in: ${_timeUntilNextLife!.inMinutes}:${(_timeUntilNextLife!.inSeconds % 60).toString().padLeft(2, '0')}',
-                            style: GoogleFonts.orbitron(fontSize: 12, color: Colors.cyanAccent),
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.black.withAlpha(60),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white.withAlpha(30)),
-                ),
-                child: Text(
-                  "Hint: $_hint",
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.exo2(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.white),
-                ),
-              ),
-              const SizedBox(height: 30),
-              _buildWordDisplay(),
-              const SizedBox(height: 40),
-              _buildKeyboard(),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

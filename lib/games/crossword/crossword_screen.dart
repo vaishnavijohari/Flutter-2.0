@@ -75,7 +75,6 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
         final r = word.direction == CrosswordDirection.down ? word.startRow + i : word.startRow;
         final c = word.direction == CrosswordDirection.across ? word.startCol + i : word.startCol;
         
-        /// ✅ **DEFINITIVE FIX**: Added robust boundary checks here.
         if (r >= 0 && r < puzzle.rows && c >= 0 && c < puzzle.cols) {
           _cellToWordsMap['$r-$c']?.add(word);
         }
@@ -259,33 +258,46 @@ class _CrosswordScreenState extends State<CrosswordScreen> {
       body: GameBackground(
         child: LayoutBuilder(
           builder: (context, constraints) {
+            // --- MODIFIED: The main layout is now a Column with a Spacer ---
             return SingleChildScrollView(
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(12.0, 80.0, 12.0, 20.0),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildGrid(),
-                        const SizedBox(height: 20),
-                        AnimatedOpacity(
-                          opacity: hasSelection ? 1.0 : 0.0,
-                          duration: _CrosswordConstants.animationDuration,
-                          child: hasSelection ? _buildHints() : const SizedBox(height: 140),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start, // Align content to the top
+                    children: [
+                      _buildGrid(),
+                      const SizedBox(height: 20),
+                      AnimatedOpacity(
+                        opacity: hasSelection ? 1.0 : 0.0,
+                        duration: _CrosswordConstants.animationDuration,
+                        child: hasSelection ? _buildHints() : const SizedBox(height: 140),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: _submitAnswers,
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFf50057),
+                            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+                        child: Text('Submit', style: GoogleFonts.orbitron(fontSize: 16, color: Colors.white)),
+                      ),
+                      const Spacer(), // Pushes the ad to the bottom
+                      // --- NEW: Placeholder for an ad banner ---
+                      Container(
+                        height: 50,
+                        width: double.infinity,
+                        color: Colors.black.withAlpha(100),
+                        margin: const EdgeInsets.all(8),
+                        child: const Center(
+                          child: Text(
+                            'Ad Placeholder',
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: _submitAnswers,
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFf50057),
-                              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
-                          child: Text('Submit', style: GoogleFonts.orbitron(fontSize: 16, color: Colors.white)),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),

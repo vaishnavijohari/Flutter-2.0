@@ -14,57 +14,59 @@ class WordConnectLevel {
 }
 
 final wordConnectLevels = [
-  // --- 4-Letter Puzzles (6 solutions each) ---
-  WordConnectLevel(letters: "SOMA", solutions: {"SAM", "MAS", "OAS", "SOMA", "AMOS", "ROMA"}), // Mythology: SOMA, Place: ROMA
-  WordConnectLevel(letters: "VEDA", solutions: {"AVE", "DEV", "EVE", "VADE", "VEDA", "DAVE"}), // Mythology: VEDA, General
-  WordConnectLevel(letters: "MARS", solutions: {"ARM", "RAM", "MAR", "RAS", "MARS", "ASURA"}), // Science: MARS, Mythology: ASURA
-  WordConnectLevel(letters: "YAMA", solutions: {"YAM", "MAY", "MYA", "MAYA", "YAMA", "ARMY"}), // Mythology: YAMA, MAYA
-  WordConnectLevel(letters: "NILE", solutions: {"LIE", "NIL", "LINE", "LIEN", "NILE", "INDRA"}), // Place: NILE, Mythology: INDRA
-  WordConnectLevel(letters: "LOKI", solutions: {"OIL", "LOK", "KILO", "COIL", "LOKI", "KALI"}), // Mythology: LOKI, KALI
-  WordConnectLevel(letters: "DEVA", solutions: {"DEV", "AVE", "VADE", "DAVE", "DEVA", "DAEVA"}), // Mythology: DEVA, DAEVA
-  WordConnectLevel(letters: "BALI", solutions: {"AIL", "LAB", "LIB", "BAIL", "BALI", "ALIB"}), // Mythology: BALI, Place: BALI
-  WordConnectLevel(letters: "RAJA", solutions: {"RAJ", "JAR", "JAVA", "RAJA", "JARA", "AJAR"}), // Mythology: RAJA, Place: JAVA
-  WordConnectLevel(letters: "NAGA", solutions: {"NAG", "GAN", "ANA", "GAGA", "NAGA", "MANGA"}), // Mythology: NAGA, Anime: MANGA
+  // --- 20 Four-Letter Puzzles (6 solutions each) ---
+  WordConnectLevel(letters: "LMAE", solutions: {"AM", "ELM", "ALE", "MALE", "MEAL", "LAME"}),
+  WordConnectLevel(letters: "REAC", solutions: {"ACE", "ARC", "CAR", "CARE", "EAR", "RACE"}),
+  WordConnectLevel(letters: "ATSR", solutions: {"ART", "RAT", "SAT", "STAR", "TAR", "TSAR"}),
+  WordConnectLevel(letters: "ADTE", solutions: {"ATE", "EAT", "TAD", "TEA", "DATE", "TEAD"}),
+  WordConnectLevel(letters: "ALPE", solutions: {"ALP", "APE", "LAP", "LEA", "PALE", "PEAL"}),
+  WordConnectLevel(letters: "BREA", solutions: {"ARE", "BAR", "BARE", "EAR", "ERA", "BEAR"}),
+  WordConnectLevel(letters: "TMAE", solutions: {"ATE", "EAT", "MAT", "MEAT", "TAM", "TEAM"}),
+  WordConnectLevel(letters: "FCEA", solutions: {"ACE", "CAF", "FAE", "FACE", "CAFE", "FECA"}),
+  WordConnectLevel(letters: "VAHE", solutions: {"AVE", "EVE", "HAVE", "VAE", "HAE", "EAVE"}),
+  WordConnectLevel(letters: "NLIE", solutions: {"LIE", "NIL", "LINE", "LIEN", "LEI", "LINT"}),
+  WordConnectLevel(letters: "MDOE", solutions: {"DOE", "DOM", "ODE", "MODE", "DEMO", "DOME"}),
+  WordConnectLevel(letters: "RDIE", solutions: {"DIE", "IRE", "RED", "RIDE", "DIRE", "REID"}),
+  WordConnectLevel(letters: "EALS", solutions: {"ALE", "SEA", "SAL", "SALE", "SEAL", "LEAS"}),
+  WordConnectLevel(letters: "WDRA", solutions: {"RAW", "WAR", "WAD", "WARD", "DRAW", "RAD"}),
+  WordConnectLevel(letters: "CNOR", solutions: {"CON", "NOR", "CORN", "ROC", "ORC", "RON"}),
+  WordConnectLevel(letters: "DWRA", solutions: {"RAW", "WAR", "WAD", "DRAW", "RAD", "DWARF"}),
+  WordConnectLevel(letters: "FMLI", solutions: {"FILM", "FILL", "MIL", "ILL", "IF", "FLIM"}),
+  WordConnectLevel(letters: "DLOG", solutions: {"GOD", "LOG", "OLD", "GOLD", "DOG", "GLOD"}),
+  WordConnectLevel(letters: "EPOH", solutions: {"HOPE", "HOP", "HOE", "OPE", "POE", "ECHO"}),
+  WordConnectLevel(letters: "DINK", solutions: {"INK", "DIN", "KID", "KIND", "DINK", "KING"}),
 
-  // --- 5-Letter Puzzles (7 solutions each) ---
-  WordConnectLevel(letters: "SURYA", solutions: {"SAY", "RAY", "RYS", "USA", "YOURS", "SURYA", "ASURA"}), // Mythology: SURYA, ASURA
-  WordConnectLevel(letters: "INDRA", solutions: {"RAN", "RID", "DIN", "RAIN", "IRAN", "INDRA", "RADIO"}), // Mythology: INDRA, Technology: RADIO
-  WordConnectLevel(letters: "AGNI", solutions: {"GIN", "NAG", "AIN", "GAIN", "GIANT", "AGNI", "ATING"}), // Mythology: AGNI, General
-  WordConnectLevel(letters: "VAYU", solutions: {"YAY", "YOU", "YUVA", "VAYU", "YOGA", "YUG", "GUY"}), // Mythology: VAYU, YUGA
-  WordConnectLevel(letters: "ASURA", solutions: {"SUE", "SEA", "ARE", "EAR", "RUSE", "SURE", "ASURA"}), // Mythology: ASURA, General
-  WordConnectLevel(letters: "GARUD", solutions: {"RUG", "RAD", "DRAG", "GUARD", "DRUID", "GARUDA", "DRUG"}), // Mythology: GARUDA, General
-  WordConnectLevel(letters: "LANKA", solutions: {"LANK", "LANA", "ANAL", "ALAN", "LANKA", "NALA", "JAPAN"}), // Mythology: LANKA, Place: JAPAN
-  WordConnectLevel(letters: "RAMAY", solutions: {"RAM", "RAY", "MAY", "YAM", "ARMY", "MARY", "RAMAYANA"}), // Mythology: RAMAYANA, General
-  WordConnectLevel(letters: "SITA", solutions: {"SAT", "SIT", "ITS", "SATAY", "STAY", "SITA", "SAINT"}), // Mythology: SITA, General
-  WordConnectLevel(letters: "MANU", solutions: {"MAN", "NAM", "MUM", "MANA", "MAUI", "MANU", "ANIME"}), // Mythology: MANU, MANA, Anime: ANIME
-  WordConnectLevel(letters: "GITA", solutions: {"GIT", "TAG", "AIT", "GAIN", "GIANT", "GITA", "ATING"}), // Mythology: GITA, General
-  WordConnectLevel(letters: "NALA", solutions: {"NAL", "ANA", "ALAN", "LANA", "NALA", "NAAN", "ANAL"}), // Mythology: NALA, General
-  WordConnectLevel(letters: "VALI", solutions: {"AIL", "VIA", "VAIL", "VIAL", "LAIR", "VALI", "LIRA"}), // Mythology: VALI, Currency: LIRA
-  WordConnectLevel(letters: "MAYA", solutions: {"MAY", "YAM", "MYA", "AMY", "MAYA", "YAMA", "MAYO"}), // Mythology: MAYA, YAMA
-  WordConnectLevel(letters: "PUMA", solutions: {"PUMA", "MAP", "AMP", "PAM", "UMP", "PRAM", "PURANA"}), // Brand: PUMA, Mythology: PURANA
+  // --- 20 Five-Letter Puzzles (7 solutions each) ---
+  WordConnectLevel(letters: "ALPEP", solutions: {"APE", "APP", "LAP", "PAL", "PALE", "PEA", "APPLE"}),
+  WordConnectLevel(letters: "BCEHA", solutions: {"ACE", "ACHE", "BACH", "BEACH", "CAB", "EACH", "HEBE"}),
+  WordConnectLevel(letters: "CRAIH", solutions: {"ARC", "CAR", "CHAR", "CHI", "HAIR", "RICH", "CHAIR"}),
+  WordConnectLevel(letters: "AREDM", solutions: {"ARM", "DAM", "DRAM", "DREAM", "EAR", "ERA", "MADRE"}),
+  WordConnectLevel(letters: "TREAH", solutions: {"ART", "EAR", "EAT", "HEART", "RAT", "TAR", "EARTH"}),
+  WordConnectLevel(letters: "WOLFER", solutions: {"FOE", "FOR", "LOW", "OWE", "ROLE", "WORE", "FLOWER"}),
+  WordConnectLevel(letters: "PARGE", solutions: {"APE", "ARE", "GAP", "GRAPE", "PARE", "PEA", "REAP"}),
+  WordConnectLevel(letters: "OUSHE", solutions: {"USE", "SUE", "SHOE", "HOSE", "HOE", "HUE", "HOUSE"}),
+  WordConnectLevel(letters: "DIINA", solutions: {"AID", "AND", "DAN", "DIN", "INDIA", "IN", "NADIR"}),
+  WordConnectLevel(letters: "LIMSE", solutions: {"SMILE", "SLIM", "MILE", "LIME", "LIES", "MISE", "ISLE"}),
+  WordConnectLevel(letters: "FINKE", solutions: {"FEN", "FIN", "FINK", "IF", "INK", "KINE", "KNIFE"}),
+  WordConnectLevel(letters: "MOELN", solutions: {"LEMON", "LONE", "MEN", "EON", "MELON", "NOM", "MOLE"}),
+  WordConnectLevel(letters: "NEOMY", solutions: {"MONEY", "EON", "MEN", "MON", "ONE", "YEN", "MOY"}),
+  WordConnectLevel(letters: "RTONH", solutions: {"HON", "HOT", "NOT", "NTH", "RHO", "ROT", "NORTH"}),
+  WordConnectLevel(letters: "AEOCN", solutions: {"OCEAN", "CANOE", "CANE", "CONE", "CON", "CAN", "ONCE"}),
+  WordConnectLevel(letters: "NIPAO", solutions: {"AIN", "ION", "NAP", "NIP", "PAIN", "PAN", "PIANO"}),
+  WordConnectLevel(letters: "EUQEN", solutions: {"EEN", "NEE", "QUE", "QUEN", "UNE", "NE", "QUEEN"}),
+  WordConnectLevel(letters: "DARIO", solutions: {"AID", "AIR", "OAR", "RAD", "RAID", "RID", "RADIO"}),
+  WordConnectLevel(letters: "RHSAK", solutions: {"SHARK", "HARK", "RASH", "ARK", "ASH", "ASK", "SHAK"}),
+  WordConnectLevel(letters: "LABTE", solutions: {"ABE", "ABLE", "ALE", "BALE", "BAT", "BET", "TABLE"}),
 
-  // --- 6-Letter Puzzles (8 solutions each) ---
-  WordConnectLevel(letters: "VARUNA", solutions: {"RUN", "URN", "VAN", "AURA", "RAUN", "VARUNA", "URANUS", "RUANA"}), // Mythology: VARUNA, Science: URANUS
-  WordConnectLevel(letters: "KUBERA", solutions: {"ARE", "BAR", "BRA", "BEAR", "BARE", "BRAE", "KUBERA", "BAKER"}), // Mythology: KUBERA, General
-  WordConnectLevel(letters: "MOHINI", solutions: {"HIM", "HEN", "ION", "HOME", "OMEN", "MINE", "MOHINI", "HOMIE"}), // Mythology: MOHINI, General
-  WordConnectLevel(letters: "JATAYU", solutions: {"JAY", "JUT", "TAY", "YAY", "JUTA", "JATAYU", "JAYA", "YAUTJA"}), // Mythology: JATAYU, Movie: YAUTJA (Predator)
-  WordConnectLevel(letters: "GANDIV", solutions: {"AND", "DIG", "GIN", "VAN", "DIVA", "GAIN", "GANDIVA", "VIDAN"}), // Mythology: GANDIVA, General
-  WordConnectLevel(letters: "DHRUVA", solutions: {"HAD", "HARD", "VAHD", "DURA", "DHAR", "DHRUVA", "HARV", "DUBAI"}), // Mythology: DHRUVA, Place: DUBAI
-  WordConnectLevel(letters: "NALANDA", solutions: {"AND", "LAD", "LAND", "ANAL", "ALAN", "NALANDA", "CANADA", "NALA"}), // Place: NALANDA, CANADA, Mythology: NALA
-  WordConnectLevel(letters: "HIMALAY", solutions: {"HIM", "HAY", "LAM", "LAY", "MAY", "YAM", "HAIL", "HIMALAYA"}), // Place: HIMALAYA, Mythology
-  WordConnectLevel(letters: "TAJMAHL", solutions: {"JAM", "HAM", "HAT", "HALT", "MALT", "MATH", "TAJMAHAL", "LATHE"}), // Place: TAJMAHAL, General
-  WordConnectLevel(letters: "AVATARA", solutions: {"TAR", "RAT", "ART", "VARA", "RAVA", "TARA", "AVATAR", "RAVANA"}), // Mythology: AVATAR, RAVANA
-  WordConnectLevel(letters: "DEVAKI", solutions: {"DIVE", "KID", "VIA", "VIE", "AKIN", "KIVA", "VADE", "DEVAKI"}), // Mythology: DEVAKI, General
-  WordConnectLevel(letters: "GANESHA", solutions: {"GAS", "HEN", "HAG", "NAG", "SAGE", "SHAG", "SANE", "GANESHA"}), // Mythology: GANESHA, General
-  WordConnectLevel(letters: "VALKYRE", solutions: {"VAL", "RYA", "KEY", "LARK", "VARY", "VALKYRIE", "REAL", "LAKE"}), // Mythology: VALKYRIE, General
-  WordConnectLevel(letters: "YAMAHAS", solutions: {"YAM", "ASH", "HAY", "HAS", "MAY", "SHY", "MASH", "YAMAHA"}), // Brand: YAMAHA, Mythology: YAMA
-  WordConnectLevel(letters: "PARISN", solutions: {"AIR", "NAP", "PAN", "PAR", "SPIN", "PAIN", "PAIR", "PARIS"}), // Place: PARIS, General
-  WordConnectLevel(letters: "MOSCOW", solutions: {"MOW", "COW", "COS", "SOW", "MOWS", "COWS", "MOSCOW", "SCOW"}), // Place: MOSCOW, General
-  WordConnectLevel(letters: "EGYPTA", solutions: {"GAP", "GET", "GYP", "PAT", "TAPE", "TYPE", "EGYPT", "PAGE"}), // Place: EGYPT, General
-  WordConnectLevel(letters: "AMAZON", solutions: {"MAN", "NAM", "ZOO", "AMAZON", "MANO", "MONA", "AZAN", "ZOOM"}), // Place: AMAZON, General
-  WordConnectLevel(letters: "EVERST", solutions: {"EVE", "REV", "SEE", "SET", "REST", "TREE", "VERSE", "EVEREST"}), // Place: EVEREST, General
-  WordConnectLevel(letters: "SAHARN", solutions: {"ASH", "HAS", "RAN", "SAN", "SHAH", "RASH", "SAHARA", "SHARN"}), // Place: SAHARA, General
-  WordConnectLevel(letters: "BERLIN", solutions: {"BIN", "LIE", "NIB", "REB", "BRINE", "LINER", "BERLIN", "REBEL"}), // Place: BERLIN, General
-  WordConnectLevel(letters: "SYDNEY", solutions: {"DEN", "DEY", "DYE", "END", "SEND", "DYNE", "SYDNEY", "DENSE"}), // Place: SYDNEY, General
-  WordConnectLevel(letters: "NEBULA", solutions: {"ALE", "BAN", "BEN", "BUN", "LANE", "LEAN", "LUNA", "NEBULA"}), // Science: NEBULA, General
+  // --- 10 Six-Letter Puzzles (8 solutions each) ---
+  WordConnectLevel(letters: "RAOGNE", solutions: {"ORANGE", "RANGE", "RANG", "GEAR", "RAGE", "NEAR", "EARN", "GORE"}),
+  WordConnectLevel(letters: "UMSRME", solutions: {"SUMMER", "MUSER", "RUM", "SUM", "SUE", "USE", "RUSE", "MUSE"}),
+  WordConnectLevel(letters: "NIWRET", solutions: {"WINTER", "WRITE", "RENT", "TIRE", "WREN", "TERN", "TWIN", "WINE"}),
+  WordConnectLevel(letters: "TUANMU", solutions: {"AUTUMN", "ANT", "AUNT", "MAN", "MAT", "MINT", "NUT", "TUNA"}),
+  WordConnectLevel(letters: "APLTNE", solutions: {"PLANET", "PLANT", "LANE", "LATE", "PANE", "PANT", "PEAT", "LEAPT"}),
+  WordConnectLevel(letters: "RPSNIG", solutions: {"SPRING", "RING", "GRIN", "PIG", "PIN", "RIG", "RIP", "GRIP"}),
+  WordConnectLevel(letters: "IRBEDG", solutions: {"BRIDGE", "RIDGE", "RIDE", "GRID", "DIRE", "BRED", "BRIG", "GIRD"}),
+  WordConnectLevel(letters: "IUGATR", solutions: {"AIR", "ART", "GUT", "RAG", "RAT", "RUG", "TAG", "GUITAR"}),
+  WordConnectLevel(letters: "CAJEKT", solutions: {"ACE", "ACT", "ATE", "CAT", "EAT", "JET", "TEA", "JACKET"}),
+  WordConnectLevel(letters: "OLFREW", solutions: {"FLOWER", "FOWL", "FORE", "FLOW", "WOLF", "ROLE", "FOE", "LOWER"}),
 ];

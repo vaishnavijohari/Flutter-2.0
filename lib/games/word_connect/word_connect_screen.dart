@@ -9,7 +9,7 @@ import '../../widgets/games/game_background.dart';
 // Represents a single letter's position and state in the circle
 class LetterNode {
   final String letter;
-  Offset position; // MODIFIED: Position can now be updated
+  Offset position;
   final int index;
   bool isSelected = false;
 
@@ -64,7 +64,6 @@ class _WordConnectScreenState extends State<WordConnectScreen> with TickerProvid
       _currentPath.clear();
       _currentWord = "";
       
-      // --- NEW: Initialize letter nodes without positions ---
       _letterNodes.clear();
       for (int i = 0; i < _currentLevel.letters.length; i++) {
         _letterNodes.add(LetterNode(_currentLevel.letters[i], Offset.zero, i));
@@ -72,7 +71,6 @@ class _WordConnectScreenState extends State<WordConnectScreen> with TickerProvid
     });
   }
   
-  // --- NEW: Calculates letter positions based on the available size ---
   void _updateLetterNodePositions(Size size) {
     final center = size.center(Offset.zero);
     final radius = size.width * 0.35;
@@ -111,7 +109,6 @@ class _WordConnectScreenState extends State<WordConnectScreen> with TickerProvid
 
   void _checkLetterInteraction(Offset position) {
     for (var node in _letterNodes) {
-      // Ensure node position is not zero before checking distance
       if (node.position != Offset.zero) {
         final distance = (position - node.position).distance;
         if (distance < 30 && !node.isSelected) {
@@ -137,9 +134,9 @@ class _WordConnectScreenState extends State<WordConnectScreen> with TickerProvid
         _showLevelCompleteDialog();
       }
     } else if (_foundWords.contains(_currentWord)) {
-      _feedbackColor = Colors.amber; // Already found
+      _feedbackColor = Colors.amber;
     } else {
-      _feedbackColor = Colors.redAccent; // Invalid word
+      _feedbackColor = Colors.redAccent;
     }
     _feedbackController.forward(from: 0.0);
     
@@ -198,10 +195,8 @@ class _WordConnectScreenState extends State<WordConnectScreen> with TickerProvid
               _buildFoundWordsGrid(),
               _buildCurrentWordDisplay(),
               Expanded(
-                // --- NEW: LayoutBuilder to get the size for position calculation ---
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    // Calculate positions once we have the size of the container
                     _updateLetterNodePositions(constraints.biggest);
                     
                     return GestureDetector(
@@ -220,6 +215,19 @@ class _WordConnectScreenState extends State<WordConnectScreen> with TickerProvid
                   }
                 ),
               ),
+              // --- NEW: Placeholder for an ad banner ---
+              Container(
+                height: 50,
+                width: double.infinity,
+                color: Colors.black.withAlpha(100),
+                margin: const EdgeInsets.all(8),
+                child: const Center(
+                  child: Text(
+                    'Ad Placeholder',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -228,14 +236,14 @@ class _WordConnectScreenState extends State<WordConnectScreen> with TickerProvid
   }
 
   Widget _buildCurrentWordDisplay() {
-    // --- MODIFIED: The color is now always white unless the feedback animation is running ---
     final bool isAnimatingFeedback = _feedbackController.isAnimating;
     final Color displayColor = isAnimatingFeedback 
         ? Color.lerp(_feedbackColor, Colors.white, _feedbackController.value)!
         : Colors.white;
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      // --- MODIFIED: Reduced vertical padding to close the gap ---
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       child: Text(
         _currentWord.isEmpty ? " " : _currentWord,
         style: GoogleFonts.orbitron(
@@ -254,7 +262,8 @@ class _WordConnectScreenState extends State<WordConnectScreen> with TickerProvid
   Widget _buildFoundWordsGrid() {
     return Container(
       padding: const EdgeInsets.all(16),
-      height: MediaQuery.of(context).size.height * 0.3,
+      // --- MODIFIED: Reduced height to close the gap ---
+      height: MediaQuery.of(context).size.height * 0.25,
       child: GridView.builder(
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 120,
@@ -289,7 +298,6 @@ class _WordConnectScreenState extends State<WordConnectScreen> with TickerProvid
 }
 
 class _WordCirclePainter extends CustomPainter {
-  // --- MODIFIED: No longer takes 'letters' as it's part of the nodes ---
   final List<LetterNode> nodes;
   final List<LetterNode> currentPath;
   final Offset? panPosition;
@@ -305,7 +313,6 @@ class _WordCirclePainter extends CustomPainter {
     final center = size.center(Offset.zero);
     final radius = size.width * 0.35;
 
-    // Prepare paints
     final linePaint = Paint()
       ..color = Colors.cyanAccent.withAlpha((255 * 0.7).round())
       ..strokeWidth = 8
@@ -320,10 +327,8 @@ class _WordCirclePainter extends CustomPainter {
       ..color = Colors.cyanAccent.withAlpha((255 * 0.8).round())
       ..style = PaintingStyle.fill;
 
-    // Draw the main circle outline
     canvas.drawCircle(center, radius, circlePaint);
     
-    // --- MODIFIED: No longer calculates positions, just draws the nodes ---
     for (var node in nodes) {
       final isSelected = currentPath.contains(node);
       
@@ -334,7 +339,6 @@ class _WordCirclePainter extends CustomPainter {
       final textSpan = TextSpan(
         text: node.letter,
         style: GoogleFonts.orbitron(
-          // --- MODIFIED: Changed selected color for better visibility ---
           color: isSelected ? Colors.black87 : Colors.white,
           fontSize: 28,
           fontWeight: FontWeight.bold,
@@ -349,14 +353,12 @@ class _WordCirclePainter extends CustomPainter {
       textPainter.paint(canvas, node.position - Offset(textPainter.width / 2, textPainter.height / 2));
     }
 
-    // Draw connection lines
     if (currentPath.length > 1) {
       for (int i = 0; i < currentPath.length - 1; i++) {
         canvas.drawLine(currentPath[i].position, currentPath[i + 1].position, linePaint);
       }
     }
 
-    // Draw line to current pan position
     if (currentPath.isNotEmpty && panPosition != null) {
       canvas.drawLine(currentPath.last.position, panPosition!, linePaint);
     }

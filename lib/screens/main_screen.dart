@@ -7,7 +7,7 @@ import 'games_screen.dart';
 import 'crypto_screen.dart';
 import 'profile_screen.dart';
 import '../widgets/common/custom_bottom_nav_bar.dart';
-import '../widgets/common/app_background.dart'; // <-- NEW: Import the background
+import '../widgets/common/app_background.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -36,19 +36,22 @@ class _MainScreenState extends State<MainScreen> {
     ];
 
     return Scaffold(
-      // The Scaffold's background is transparent due to the new AppTheme
-      body: AppBackground( // <-- MODIFIED: The AppBackground is now the base layer
-        child: Stack(
-          children: [
-            IndexedStack(
-              index: _selectedIndex,
-              children: screens,
-            ),
-            CustomBottomNavBar(
-              selectedIndex: _selectedIndex,
-              onItemTapped: _onItemTapped,
-            ),
-          ],
+      body: AppBackground(
+        // --- MODIFIED
+        child: SafeArea(
+          top: false,
+          child: Stack(
+            children: [
+              IndexedStack(
+                index: _selectedIndex,
+                children: screens,
+              ),
+              CustomBottomNavBar(
+                selectedIndex: _selectedIndex,
+                onItemTapped: _onItemTapped,
+              ),
+            ],
+          ),
         ),
       ),
     );
